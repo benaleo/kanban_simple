@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen w-full galaxy-bg p-6">
+  <div class="min-h-screen w-full galaxy-bg p-6 overflow-hidden">
     <!-- Loading and error messages -->
     <div
       v-if="loading"
@@ -10,7 +10,7 @@
     <div v-if="error" class="fixed top-0 left-0 w-full bg-red-600 text-white p-2 text-center z-50">
       {{ error }}
     </div>
-    <div class="container mx-auto">
+    <div class="container flex flex-col gap-4">
       <h1 class="text-4xl font-bold text-white text-center mb-8">Galaxy Kanban</h1>
 
       <!-- Task Creation Form -->
@@ -58,11 +58,11 @@
       </div>
 
       <!-- Kanban Board -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div class="flex flex-nowrap gap-4 mt-2 scroll-auto overflow-x-auto min-h-[calc(100vh-350px)] pb-4">
         <div
           v-for="column in columns"
           :key="column.id"
-          class="bg-white/10 backdrop-blur-md rounded-xl p-4 shadow-xl border border-white/20"
+          class="flex-1 min-w-[300px] bg-white/10 backdrop-blur-md rounded-xl p-4 shadow-xl border border-white/20"
         >
           <div class="flex items-center justify-between mb-4">
             <h3 class="text-xl font-semibold text-white">{{ column.title }}</h3>
@@ -72,7 +72,7 @@
           </div>
 
           <div
-            class="min-h-[200px] space-y-3 drop-zone"
+            class="min-h-[200px] flex flex-col gap-2 drop-zone"
             @dragover.prevent
             @drop="onDrop($event, column.id)"
           >
@@ -84,7 +84,7 @@
               draggable="true"
               @dragstart="onDragStart($event, task, column.id)"
               @dragenter.prevent
-              class="task-card bg-white/20 backdrop-blur-sm p-4 rounded-lg border border-white/30 cursor-move hover:shadow-lg transition-all duration-200 hover:bg-white/30"
+              class="task-card bg-white/20 backdrop-blur-sm p-4 mb-4 rounded-lg border border-white/30 cursor-move hover:shadow-lg transition-all duration-200 hover:bg-white/30"
             >
               <div class="flex justify-between items-start mb-2">
                 <h4 class="text-white font-medium text-lg">{{ task.title }}</h4>
