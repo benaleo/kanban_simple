@@ -1,8 +1,11 @@
 <template>
   <div class="min-h-screen w-full galaxy-bg p-6 overflow-hidden">
     <!-- Loading and error messages -->
-    <div v-if="loading" class="fixed top-0 left-0 w-full bg-purple-600 text-white p-2 text-center z-50">
+    <div v-if="loading" class="fixed inset-0 w-full bg-purple-600/10 text-white p-2 text-center z-50">
+      <div class="w-full min-h-screen flex justify-center items-center">
       Loading tasks...
+
+      </div>
     </div>
     <div v-if="error" class="fixed top-0 left-0 w-full bg-red-600 text-white p-2 text-center z-50">
       {{ error }}
@@ -163,7 +166,7 @@ import { createTask, deleteTask, getTasks, updateTaskStatus, updateTask as updat
 import moment from 'moment-timezone'
 
 document.title = "Beno Kanban"
-
+import { toast } from 'vue-sonner'
 
 // Define types
 interface Column {
@@ -278,8 +281,16 @@ const addTask = async () => {
   } catch (err) {
     console.error('Error creating task:', err)
     error.value = 'Failed to create task. Please try again.'
+    toast.error('Error', {
+      description: 'Failed to create task. Please try again.',
+      duration: 3000
+    })
   } finally {
     loading.value = false
+    toast.success('Success', {
+      description: 'Task created successfully',
+      duration: 3000
+    })
   }
 }
 
@@ -297,8 +308,16 @@ const removeTask = async (taskId: string) => {
   } catch (err) {
     console.error('Error deleting task:', err)
     error.value = 'Failed to delete task. Please try again.'
+    toast.error('Error', {
+      description: 'Failed to delete task. Please try again.',
+      duration: 3000
+    })
   } finally {
     loading.value = false
+    toast.success('Success', {
+      description: 'Task deleted successfully',
+      duration: 3000
+    })
   }
 }
 
@@ -465,8 +484,16 @@ const updateTask = async () => {
   } catch (err) {
     console.error('Error updating task:', err)
     error.value = 'Failed to update task. Please try again.'
+    toast.error('Error', {
+      description: 'Failed to update task. Please try again.',
+      duration: 3000
+    })
   } finally {
     loading.value = false
+    toast.success('Success', {
+      description: 'Task updated successfully',
+      duration: 3000
+    })
   }
 }
 </script>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import favicon from '@/assets/favicon/favicon.ico'
+import { Toaster } from 'vue-sonner'
 
 document.head.insertAdjacentHTML('beforeend',
   `<link rel="icon" type="image/png" href="${favicon}" />`
@@ -8,6 +9,6 @@ document.head.insertAdjacentHTML('beforeend',
 </script>
 
 <template>
-  <RouterView>
-  </RouterView>
+    <Toaster rich-colors />
+    <RouterView />
 </template>
