@@ -24,14 +24,15 @@
               class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-purple-500 h-24"></textarea>
           </div>
           <div class="flex flex-col gap-2">
-            <div>
+            <div class="flex gap-2">
               <select v-model="newTask.status"
-                class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
+                class="flex-1 p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
                 <option class="bg-black text-white border-red-200 rounded-lg" v-for="column in columns" :key="column.id"
                   :value="column.id">
-                  {{ column.title }}
+                  {{ column.name }}
                 </option>
               </select>
+              <button @click="openColumnDialog" class="max-w-[150px] p-3 bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl">Manage Columns</button>
             </div>
             <button @click="addTask"
               class="mt-4 bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl">
@@ -46,7 +47,7 @@
         <div v-for="column in columns" :key="column.id"
           class="flex-1 flex flex-col gap-4 min-w-[300px] space-y-2 bg-white/10 backdrop-blur-md rounded-xl p-4 shadow-xl border border-white/20">
           <div class="flex items-center justify-between mb-4">
-            <h3 class="text-xl font-semibold text-white">{{ column.title }}</h3>
+            <h3 class="text-xl font-semibold text-white">{{ column.name }}</h3>
             <div class="bg-white/20 text-white text-sm px-2 py-1 rounded-full">
               {{ tasksInColumn(column.id).length }}
             </div>
@@ -80,6 +81,17 @@
     </div>
   </div>
   </auth-layout>
+  
+  <!-- Show Project Dialog if no project selected -->
+  <ProjectDialog v-if="showNoProjectDialog" @close="showNoProjectDialog = false" @select="handleProjectSelect" />
+  
+  <!-- Column Management Dialog -->
+  <ColumnDialog 
+    v-if="showColumnDialog" 
+    :projectId="currentProjectId" 
+    @close="showColumnDialog = false" 
+    @update="handleColumnsUpdate" 
+  />
 
   <!-- Edit Task Modal -->
   <div v-if="isEditModalOpen" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
@@ -113,7 +125,7 @@
             class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
             <option class="bg-black text-white border-red-200 rounded-lg" v-for="column in columns" :key="column.id"
               :value="column.id">
-              {{ column.title }}
+              {{ column.name }}
             </option>
           </select>
         </div>
@@ -158,8 +170,10 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
 import moment from 'moment-timezone'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import AuthLayout from '../layouts/AuthLayout.vue'
+import ProjectDialog from '@/components/ProjectDialog.vue'
+import ColumnDialog from '@/components/ColumnDialog.vue'
 // External modules
 // Import Supabase Kanban service
 import type { Task as SupabaseTask } from '../../services/kanbanService'
@@ -173,7 +187,15 @@ import LoadingJSON from "@/assets/html/loading.json"
 // Define types
 interface Column {
   id: string
-  title: string
+  name: string
+  project_id: string
+  created_at: Date
+  order: number
+}
+
+interface DragItem {
+  task: SupabaseTask
+  fromColumnId: string
 }
 
 interface NewTask {
@@ -220,14 +242,15 @@ const editingTask = ref<EditingTask>({
   project_id: ''
 })
 
-// Define columns
-const columns: Column[] = [
-  { id: 'planning', title: 'Planning' },
-  { id: 'todo', title: 'Todo' },
-  { id: 'in-progress', title: 'In Progress' },
-  { id: 'test', title: 'Test' },
-  { id: 'done', title: 'Done' },
-]
+// Project dialog state
+const showNoProjectDialog = ref(false)
+const showColumnDialog = ref(false)
+
+// Router for navigation
+const router = useRouter()
+
+// Columns definition
+const columns = ref<Column[]>([])
 
 // Tasks state
 const tasks = ref<SupabaseTask[]>([])
@@ -271,15 +294,50 @@ const fetchTasks = async () => {
   } catch (err) {
     console.error('Error fetching tasks:', err)
     error.value = 'Failed to load tasks. Please refresh the page.'
+    toast.error('Error', {
+      description: 'Failed to load tasks',
+      duration: 3000
+    })
   } finally {
     loading.value = false
   }
 }
 
-// Watch for changes in project ID to refresh tasks
-watch(() => currentProjectId.value, () => {
-  fetchTasks()
+// Watch for changes in project ID to refresh tasks and check for missing project
+watch(() => currentProjectId.value, (newProjectId) => {
+  if (newProjectId) {
+    fetchTasks()
+    loadColumns()
+  } else {
+    // If no project selected, show the project dialog
+    showNoProjectDialog.value = true
+  }
 })
+
+// Load columns from backend
+const loadColumns = async () => {
+  try {
+    loading.value = true
+    const { getColumns } = await import('../../services/columnService')
+    const fetchedColumns = await getColumns(currentProjectId.value)
+    if (fetchedColumns.length === 0) {
+      // If no columns, create default ones
+      const { initializeDefaultColumns } = await import('../../services/columnService')
+      columns.value = await initializeDefaultColumns(currentProjectId.value)
+    } else {
+      columns.value = fetchedColumns
+    }
+  } catch (err) {
+    console.error('Error loading columns:', err)
+    error.value = 'Failed to load columns. Please refresh the page.'
+    toast.error('Error', {
+      description: 'Failed to load columns',
+      duration: 3000
+    })
+  } finally {
+    loading.value = false
+  }
+}
 
 // Add a new task
 const addTask = async () => {
@@ -328,7 +386,7 @@ const addTask = async () => {
     console.error('Error creating task:', err)
     error.value = 'Failed to create task. Please try again.'
     toast.error('Error', {
-      description: 'Failed to create task. Please try again.',
+      description: 'Failed to create task',
       duration: 3000
     })
   } finally {
@@ -357,7 +415,7 @@ const removeTask = async (taskId: string) => {
     console.error('Error deleting task:', err)
     error.value = 'Failed to delete task. Please try again.'
     toast.error('Error', {
-      description: 'Failed to delete task. Please try again.',
+      description: 'Failed to delete task',
       duration: 3000
     })
   } finally {
@@ -365,10 +423,35 @@ const removeTask = async (taskId: string) => {
   }
 }
 
-// Load tasks on component mount
+// Lifecycle hooks
 onMounted(async () => {
-  fetchTasks()
+  // Check if project ID exists
+  if (currentProjectId.value) {
+    fetchTasks()
+    loadColumns()
+  } else {
+    // If no project ID, show project dialog
+    showNoProjectDialog.value = true
+  }
 })
+
+// Open column management dialog
+const openColumnDialog = () => {
+  showColumnDialog.value = true
+}
+
+// Handle columns update
+const handleColumnsUpdate = (updatedColumns: Column[]) => {
+  columns.value = updatedColumns
+  // You can also refresh tasks if needed
+  fetchTasks()
+}
+
+// Handle project selection
+const handleProjectSelect = (project: { id: string }) => {
+  router.push({ query: { id: project.id } })
+  showNoProjectDialog.value = false
+}
 
 // Handle drop event for Kanban drag-and-drop
 const onDrop = async (event: DragEvent, targetColumnId: string): Promise<void> => {

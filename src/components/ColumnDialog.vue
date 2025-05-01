@@ -2,39 +2,37 @@
   <div class="dialog-overlay" @click.self="$emit('close')">
     <div class="dialog-content">
       <div class="dialog-header">
-        <h2 class="dialog-title">{{ isEditMode ? 'Edit Project' : 'Select Project' }}</h2>
+        <h2 class="dialog-title">{{ isEditMode ? 'Edit Column' : 'Manage Columns' }}</h2>
         <button class="close-button" @click="$emit('close')">&times;</button>
       </div>
       
       <div class="dialog-body">
-        <!-- Project List -->
-        <div v-if="!isEditMode && !isAddMode" class="project-list">
-          <div class="project-list-header">
-            <h3>Your Projects</h3>
-            <button @click="startAddProject" class="add-button">
-              <i class="fas fa-plus"></i> New Project
+        <!-- Column List -->
+        <div v-if="!isEditMode && !isAddMode" class="column-list">
+          <div class="column-list-header">
+            <h3>Project Columns</h3>
+            <button @click="startAddColumn" class="add-button">
+              <i class="fas fa-plus"></i> New Column
             </button>
           </div>
           
-          <div v-if="loading" class="loading-indicator">Loading projects...</div>
+          <div v-if="loading" class="loading-indicator">Loading columns...</div>
           <div v-else-if="errorMessage" class="error-message">{{ errorMessage }}</div>
-          <div v-else-if="projects.length === 0" class="empty-state">
-            <p>You don't have any projects yet. Create your first project to get started.</p>
+          <div v-else-if="columns.length === 0" class="empty-state">
+            <p>No columns found. Create your first column to organize tasks.</p>
           </div>
           
-          <div v-else class="projects-grid">
-            <div v-for="project in projects" :key="project.id" class="project-card" 
-                 :class="{'selected': selectedProjectId === project.id}"
-                 @click="selectProject(project)">
-              <div class="project-card-content">
-                <h4 class="project-name">{{ project.name }}</h4>
+          <div v-else class="columns-grid">
+            <div v-for="column in columns" :key="column.id" class="column-card">
+              <div class="column-card-content">
+                <h4 class="column-name">{{ column.name }}</h4>
                 
-                <div class="project-actions">
-                  <button @click.stop="editProject(project)" class="edit-button" title="Edit project">
-                    <font-awesome-icon icon="edit" style="color: white" />
+                <div class="column-actions">
+                  <button @click="editColumn(column)" class="edit-button" title="Edit column">
+                    <i class="fas fa-edit"></i>
                   </button>
-                  <button @click.stop="confirmDeleteProject(project)" class="delete-button" title="Delete project">
-                    <font-awesome-icon icon="trash" style="color: white" />
+                  <button @click="confirmDeleteColumn(column)" class="delete-button" title="Delete column">
+                    <i class="fas fa-trash"></i>
                   </button>
                 </div>
               </div>
@@ -42,17 +40,17 @@
           </div>
         </div>
         
-        <!-- Add/Edit Project Form -->
-        <form v-if="isEditMode || isAddMode" @submit.prevent="saveProject" class="project-form">
+        <!-- Add/Edit Column Form -->
+        <form v-if="isEditMode || isAddMode" @submit.prevent="saveColumn" class="column-form">
           <div class="form-group">
-            <label for="projectName">Project Name</label>
+            <label for="columnName">Column Name</label>
             <input 
               type="text" 
-              id="projectName" 
-              v-model="projectForm.name" 
+              id="columnName" 
+              v-model="columnForm.name" 
               required
               class="form-input"
-              placeholder="Enter project name"
+              placeholder="Enter column name"
               autofocus
             />
           </div>
@@ -60,32 +58,22 @@
           <div class="dialog-actions">
             <button type="button" class="cancel-button" @click="cancelEdit">Cancel</button>
             <button type="submit" class="save-button" :disabled="isSubmitting">
-              {{ isSubmitting ? 'Saving...' : 'Save Project' }}
+              {{ isSubmitting ? 'Saving...' : 'Save Column' }}
             </button>
           </div>
         </form>
         
         <!-- Confirm Delete Modal -->
         <div v-if="showDeleteConfirm" class="delete-confirm">
-          <p>Are you sure you want to delete <strong>{{ projectToDelete?.name }}</strong>?</p>
-          <p class="warning">This will delete all tasks associated with this project and cannot be undone.</p>
+          <p>Are you sure you want to delete <strong>{{ columnToDelete?.name }}</strong>?</p>
+          <p class="warning">This will move all tasks in this column to 'unassigned' status and cannot be undone.</p>
           
           <div class="dialog-actions">
             <button @click="cancelDelete" class="cancel-button">Cancel</button>
-            <button @click="deleteProject" class="delete-button" :disabled="isSubmitting">
-              {{ isSubmitting ? 'Deleting...' : 'Delete Project' }}
+            <button @click="deleteColumn" class="delete-button" :disabled="isSubmitting">
+              {{ isSubmitting ? 'Deleting...' : 'Delete Column' }}
             </button>
           </div>
-        </div>
-        
-        <!-- Selection Actions -->
-        <div v-if="!isEditMode && !isAddMode && !showDeleteConfirm" class="selection-actions">
-          <button 
-            v-if="selectedProjectId" 
-            class="primary-button" 
-            @click="$emit('select', selectedProject)">
-            Open Selected Project
-          </button>
         </div>
       </div>
     </div>
@@ -93,83 +81,70 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import { getProjects, createProject, updateProject, deleteProject as deleteProjectService } from "../../services/projectService";
+import { ref, onMounted, computed, defineProps, defineEmits } from 'vue';
+import { getColumns, createColumn, updateColumn, deleteColumn as deleteColumnService } from '../../services/columnService';
 
 // Props and emits
-const emit = defineEmits(['close', 'select']);
+const props = defineProps<{
+  projectId: string;
+}>();
+
+const emit = defineEmits(['close', 'update']);
 
 // Component state
-const router = useRouter();
-const route = useRoute();
-const projects = ref<any[]>([]);
+const columns = ref<any[]>([]);
 const loading = ref(true);
 const errorMessage = ref('');
 const isSubmitting = ref(false);
-const selectedProjectId = ref('');
 const isEditMode = ref(false);
 const isAddMode = ref(false);
 const showDeleteConfirm = ref(false);
-const projectToDelete = ref<any>(null);
+const columnToDelete = ref<any>(null);
 
 // Form state
-const projectForm = ref({
+const columnForm = ref({
   id: '',
   name: ''
 });
 
-// Computed properties
-const selectedProject = computed(() => {
-  return projects.value.find(p => p.id === selectedProjectId.value) || null;
-});
-
 // Lifecycle hooks
 onMounted(async () => {
-  await loadProjects();
-  
-  // Set initial selected project from URL query param if present
-  const projectId = route.query.id as string;
-  if (projectId) {
-    selectedProjectId.value = projectId;
-  } else if (projects.value.length > 0) {
-    // Otherwise select first project by default
-    selectedProjectId.value = projects.value[0].id;
+  if (props.projectId) {
+    await loadColumns();
+  } else {
+    errorMessage.value = 'No project selected';
+    loading.value = false;
   }
 });
 
 // Methods
-async function loadProjects() {
+async function loadColumns() {
   try {
     loading.value = true;
     errorMessage.value = '';
-    projects.value = await getProjects();
+    columns.value = await getColumns(props.projectId);
   } catch (error: any) {
-    errorMessage.value = error.message || 'Failed to load projects';
+    errorMessage.value = error.message || 'Failed to load columns';
   } finally {
     loading.value = false;
   }
 }
 
-function selectProject(project: any) {
-  selectedProjectId.value = project.id;
-}
-
-function startAddProject() {
+function startAddColumn() {
   isAddMode.value = true;
   isEditMode.value = false;
-  projectForm.value = {
+  columnForm.value = {
     id: '',
     name: ''
   };
 }
 
-function editProject(project: any) {
+function editColumn(column: any) {
   isEditMode.value = true;
   isAddMode.value = false;
-  projectForm.value = {
-    id: project.id,
-    name: project.name
+  columnForm.value = {
+    id: column.id,
+    name: column.name
   };
 }
 
@@ -178,75 +153,75 @@ function cancelEdit() {
   isAddMode.value = false;
 }
 
-async function saveProject() {
+async function saveColumn() {
   try {
     isSubmitting.value = true;
     errorMessage.value = '';
     
     if (isEditMode.value) {
-      // Update existing project
-      const updatedProject = await updateProject(projectForm.value.id, {
-        name: projectForm.value.name
+      // Update existing column
+      const updatedColumn = await updateColumn(columnForm.value.id, {
+        name: columnForm.value.name
       });
       
-      // Update project in local array
-      const index = projects.value.findIndex(p => p.id === updatedProject.id);
+      // Update column in local array
+      const index = columns.value.findIndex(p => p.id === updatedColumn.id);
       if (index !== -1) {
-        projects.value[index] = updatedProject;
+        columns.value[index] = updatedColumn;
       }
     } else {
-      // Add new project
-      const newProject = await createProject({
-        name: projectForm.value.name
+      // Add new column
+      const newColumn = await createColumn(props.projectId, {
+        name: columnForm.value.name
       });
       
       // Add to local array
-      projects.value.push(newProject);
-      selectedProjectId.value = newProject.id;
+      columns.value.push(newColumn);
     }
     
     // Reset form state
     isEditMode.value = false;
     isAddMode.value = false;
+    
+    // Emit update event
+    emit('update', columns.value);
   } catch (error: any) {
-    errorMessage.value = error.message || 'Failed to save project';
+    errorMessage.value = error.message || 'Failed to save column';
   } finally {
     isSubmitting.value = false;
   }
 }
 
-function confirmDeleteProject(project: any) {
-  projectToDelete.value = project;
+function confirmDeleteColumn(column: any) {
+  columnToDelete.value = column;
   showDeleteConfirm.value = true;
 }
 
 function cancelDelete() {
-  projectToDelete.value = null;
+  columnToDelete.value = null;
   showDeleteConfirm.value = false;
 }
 
-async function deleteProject() {
-  if (!projectToDelete.value) return;
+async function deleteColumn() {
+  if (!columnToDelete.value) return;
   
   try {
     isSubmitting.value = true;
     errorMessage.value = '';
     
-    await deleteProjectService(projectToDelete.value.id);
+    await deleteColumnService(columnToDelete.value.id);
     
     // Remove from local array
-    projects.value = projects.value.filter(p => p.id !== projectToDelete.value?.id);
-    
-    // Reset selected project if needed
-    if (selectedProjectId.value === projectToDelete.value.id) {
-      selectedProjectId.value = projects.value.length > 0 ? projects.value[0].id : '';
-    }
+    columns.value = columns.value.filter(c => c.id !== columnToDelete.value?.id);
     
     // Reset state
     showDeleteConfirm.value = false;
-    projectToDelete.value = null;
+    columnToDelete.value = null;
+    
+    // Emit update event
+    emit('update', columns.value);
   } catch (error: any) {
-    errorMessage.value = error.message || 'Failed to delete project';
+    errorMessage.value = error.message || 'Failed to delete column';
   } finally {
     isSubmitting.value = false;
   }
@@ -341,7 +316,7 @@ async function deleteProject() {
   cursor: pointer;
 }
 
-.save-button, .primary-button {
+.save-button {
   padding: 0.625rem 1rem;
   background-color: #4f46e5;
   color: white;
@@ -352,7 +327,18 @@ async function deleteProject() {
   cursor: pointer;
 }
 
-.save-button:hover, .primary-button:hover {
+.delete-button {
+  padding: 0.625rem 1rem;
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.save-button:hover {
   background-color: #4338ca;
 }
 
@@ -361,14 +347,14 @@ async function deleteProject() {
   cursor: not-allowed;
 }
 
-.project-list-header {
+.column-list-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
 }
 
-.project-list-header h3 {
+.column-list-header h3 {
   font-size: 1.125rem;
   font-weight: 600;
   margin: 0;
@@ -392,46 +378,69 @@ async function deleteProject() {
   background-color: #e5e7eb;
 }
 
-.projects-grid {
+.columns-grid {
   display: grid;
   grid-template-columns: repeat(1, 1fr);
   gap: 0.75rem;
   margin-bottom: 1.5rem;
 }
 
-.project-card {
+.column-card {
   padding: 0.75rem;
   border: 1px solid #e5e7eb;
   border-radius: 0.375rem;
-  cursor: pointer;
   transition: all 0.2s;
 }
 
-.project-card:hover {
+.column-card:hover {
   border-color: #d1d5db;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
-.project-card.selected {
-  border-color: #4f46e5;
-  background-color: rgba(79, 70, 229, 0.05);
-}
-
-.project-card-content {
+.column-card-content {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.project-name {
+.column-name {
   margin: 0;
   font-weight: 500;
   font-size: 1rem;
 }
 
-.project-actions {
+.column-actions {
   display: flex;
   gap: 0.5rem;
+}
+
+.edit-button, .delete-button {
+  background: none;
+  border: none;
+  font-size: 0.875rem;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  cursor: pointer;
+}
+
+.edit-button {
+  color: #4b5563;
+}
+
+.edit-button:hover {
+  background-color: rgba(75, 85, 99, 0.1);
+}
+
+.delete-button {
+  color: #ef4444;
+}
+
+.delete-button:hover {
+  background-color: rgba(239, 68, 68, 0.1);
 }
 
 .delete-confirm {
@@ -464,11 +473,5 @@ async function deleteProject() {
 
 .error-message {
   color: #ef4444;
-}
-
-.selection-actions {
-  margin-top: 1.5rem;
-  display: flex;
-  justify-content: flex-end;
 }
 </style>

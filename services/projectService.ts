@@ -11,6 +11,7 @@ export interface Project {
 
 // Table name in Supabase
 const PROJECTS_TABLE = 'projects';
+const COLUMNS_TABLE = 'task_columns';
 
 /**
  * Fetch all projects for the current user
@@ -87,6 +88,39 @@ export const createProject = async (projectData: { name: string }): Promise<Proj
   if (error) {
     console.error('Error creating project:', error);
     throw error;
+  }
+
+  const defaultColumns = [
+    { name: 'To Do', order: 0 },
+    { name: 'In Progress', order: 1 },
+    { name: 'Done', order: 2 }
+  ];
+
+  const columnsPromises = defaultColumns.map(defaultColumn => {
+    const newColumn = {
+      id: uuidv4(),
+      name: defaultColumn.name,
+      project_id: data.id,
+      created_at: new Date(),
+      order: defaultColumn.order
+    };
+
+    return supabase
+      .from(COLUMNS_TABLE)
+      .insert(newColumn)
+      .select()
+      .single();
+  });
+
+  const columnsResults = await Promise.all(columnsPromises);
+
+  const columnsErrors = columnsResults
+    .filter(result => result.error)
+    .map(result => result.error);
+
+  if (columnsErrors.length > 0) {
+    console.error('Error creating columns:', columnsErrors);
+    throw columnsErrors;
   }
 
   return {
