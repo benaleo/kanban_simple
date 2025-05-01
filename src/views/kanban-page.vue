@@ -14,8 +14,8 @@
     </div>
     <div class="container flex flex-col gap-4">
       <!-- Task Creation Form -->
-      <div class="bg-white/10 backdrop-blur-md rounded-xl p-6 mb-8 shadow-xl border border-white/20">
-        <h2 class="text-2xl font-semibold text-white mb-4">Create New Task</h2>
+      <div class="flex flex-col gap-2 bg-white/10 backdrop-blur-md rounded-xl p-6 mb-8 shadow-xl border border-white/20">
+        <h2 class="text-2xl font-semibold text-white">Create New Task</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div class="grid gap-2 col-span-1 md:col-span-2">
             <input v-model="newTask.title" placeholder="Task Title"

@@ -8,7 +8,7 @@
         <div class="current-project" @click="openProjectDialog">
           <span class="project-name">{{ currentProject ? currentProject.name : 'Select Project' }}</span>
           <button class="select-project-btn">
-            <i class="fas fa-chevron-down"></i>
+            <font-awesome-icon icon="chevron-down" />
           </button>
         </div>
       </div>
