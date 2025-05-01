@@ -363,7 +363,6 @@ const addTask = async () => {
       })
       return
     }
-    console.log("status value", newTask.value.status)
 
     if (!newTask.value.status) {
       error.value = 'Please select a column'
