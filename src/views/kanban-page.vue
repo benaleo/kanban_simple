@@ -13,11 +13,6 @@
       {{ error }}
     </div>
     <div class="container flex flex-col gap-4">
-      <h1 class="text-4xl font-bold text-white text-center mb-8">Beno Kanban</h1>
-      <div class="flex justify-center text-white">
-        Time : {{ moment().format('MMMM Do YYYY, hh:mm:ss A') }}
-      </div>
-
       <!-- Task Creation Form -->
       <div class="bg-white/10 backdrop-blur-md rounded-xl p-6 mb-8 shadow-xl border border-white/20">
         <h2 class="text-2xl font-semibold text-white mb-4">Create New Task</h2>
