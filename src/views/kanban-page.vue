@@ -390,7 +390,7 @@ const addTask = async () => {
     newTask.value = {
       title: '',
       description: '',
-      status: 'todo',
+      status: '',
       project_id: currentProjectId.value
     }
 
