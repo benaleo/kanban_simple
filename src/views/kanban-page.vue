@@ -27,12 +27,15 @@
             <div class="flex gap-2">
               <select v-model="newTask.status"
                 class="flex-1 p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
+                <option class="bg-black text-white border-red-200 rounded-lg" value="" disabled>Select a column</option>
                 <option class="bg-black text-white border-red-200 rounded-lg" v-for="column in columns" :key="column.id"
                   :value="column.id">
                   {{ column.name }}
                 </option>
               </select>
-              <button @click="openColumnDialog" class="max-w-[150px] p-3 bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl">Manage Columns</button>
+              <button @click="openColumnDialog" class="max-w-[150px] p-3 bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl">
+                <font-awesome-icon icon="table-columns" style="color: white" />
+              </button>
             </div>
             <button @click="addTask"
               class="mt-4 bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl">
@@ -123,6 +126,7 @@
           <label class="block text-white text-sm font-medium mb-1">Status</label>
           <select v-model="editingTask.status"
             class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
+            <option class="bg-black text-white border-red-200 rounded-lg" value="" disabled>Select a column</option>
             <option class="bg-black text-white border-red-200 rounded-lg" v-for="column in columns" :key="column.id"
               :value="column.id">
               {{ column.name }}
@@ -441,9 +445,10 @@ const openColumnDialog = () => {
 }
 
 // Handle columns update
-const handleColumnsUpdate = (updatedColumns: Column[]) => {
-  columns.value = updatedColumns
-  // You can also refresh tasks if needed
+const handleColumnsUpdate = async () => {
+  // Reload columns from the backend to ensure we have the latest data
+  await loadColumns()
+  // Refresh tasks to ensure they match the updated columns
   fetchTasks()
 }
 

@@ -13,10 +13,10 @@ import { library } from '@fortawesome/fontawesome-svg-core'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 
 /* import specific icons */
-import { faTrash, faEdit } from '@fortawesome/free-solid-svg-icons'
+import { faTrash, faEdit, faTableColumns } from '@fortawesome/free-solid-svg-icons'
 
 /* add icons to the library */
-library.add(faTrash, faEdit)
+library.add(faTrash, faEdit, faTableColumns)
 
 moment.tz.setDefault('Asia/Jakarta')
 

@@ -23,7 +23,10 @@
           </div>
           
           <div v-else class="columns-grid">
-            <div v-for="column in columns" :key="column.id" class="column-card">
+            <div class="column-list-instructions">
+              <p>Drag and drop columns to change their order</p>
+            </div>
+            <div v-for="(column, index) in columns" :key="column.id" class="column-card" draggable="true" @dragstart="startDrag($event, index)" @dragover.prevent @dragenter.prevent="onDragEnter($event, index)" @dragleave.prevent="onDragLeave($event)" @drop.prevent="onDrop($event, index)" :class="{ 'drag-over': dragOverIndex === index }">
               <div class="column-card-content">
                 <h4 class="column-name">{{ column.name }}</h4>
                 
@@ -100,6 +103,8 @@ const isEditMode = ref(false);
 const isAddMode = ref(false);
 const showDeleteConfirm = ref(false);
 const columnToDelete = ref<any>(null);
+const dragOverIndex = ref<number | null>(null);
+const dragSourceIndex = ref<number | null>(null);
 
 // Form state
 const columnForm = ref({
@@ -116,6 +121,69 @@ onMounted(async () => {
     loading.value = false;
   }
 });
+
+// Drag and drop functions
+const startDrag = (event: DragEvent, index: number) => {
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.dropEffect = 'move';
+    event.dataTransfer.setData('text/plain', index.toString());
+    dragSourceIndex.value = index;
+  }
+};
+
+const onDragEnter = (event: DragEvent, index: number) => {
+  if (dragSourceIndex.value !== index) {
+    dragOverIndex.value = index;
+  }
+};
+
+const onDragLeave = (event: DragEvent) => {
+  // Only clear if we're leaving for another element, not for a child element
+  if (event.target === event.currentTarget) {
+    dragOverIndex.value = null;
+  }
+};
+
+const onDrop = async (event: DragEvent, dropIndex: number) => {
+  event.preventDefault();
+  const sourceIndex = dragSourceIndex.value;
+  dragOverIndex.value = null; // Clear drag over highlight
+  dragSourceIndex.value = null;
+  
+  if (sourceIndex === null || sourceIndex === dropIndex) return;
+  
+  try {
+    // Make a copy of the columns array
+    const newColumns = [...columns.value];
+    
+    // Remove the item from its original position
+    const [movedColumn] = newColumns.splice(sourceIndex, 1);
+    
+    // Insert it at the new position
+    newColumns.splice(dropIndex, 0, movedColumn);
+    
+    // Update all affected columns with new order values
+    // First update the local state
+    columns.value = newColumns.map((col, idx) => ({
+      ...col,
+      order: idx
+    }));
+    
+    // Then update the backend
+    loading.value = true;
+    const updatePromises = columns.value.map(column => {
+      return updateColumn(column.id, { order: column.order });
+    });
+    
+    await Promise.all(updatePromises);
+    emit('update'); // Notify parent that columns have been updated
+  } catch (error: any) {
+    errorMessage.value = error.message || 'Failed to update column order';
+  } finally {
+    loading.value = false;
+  }
+};
 
 // Methods
 async function loadColumns() {
@@ -360,6 +428,16 @@ async function deleteColumn() {
   margin: 0;
 }
 
+.column-list-instructions {
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background-color: #f9fafb;
+  border-radius: 0.375rem;
+  color: #6b7280;
+  font-size: 0.875rem;
+  text-align: center;
+}
+
 .add-button {
   display: flex;
   align-items: center;
@@ -390,11 +468,21 @@ async function deleteColumn() {
   border: 1px solid #e5e7eb;
   border-radius: 0.375rem;
   transition: all 0.2s;
+  cursor: grab;
 }
 
 .column-card:hover {
   border-color: #d1d5db;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.column-card.drag-over {
+  border: 2px dashed #4f46e5;
+  background-color: rgba(79, 70, 229, 0.1);
+}
+
+.column-card:active {
+  cursor: grabbing;
 }
 
 .column-card-content {
