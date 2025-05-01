@@ -1,7 +1,7 @@
 <template>
   <div class="layout-container">
     <header class="navbar">
-      <div class="navbar-brand" v-if="!isMobile"gh>
+      <div class="navbar-brand" v-if="!isMobile">
         <router-link to="/" class="logo">Kanban Board</router-link>
       </div>
       <div class="project-selector" v-if="currentUser && userProfile">
