@@ -48,6 +48,8 @@ import { useRouter } from 'vue-router';
 import { registerUser } from '../../services/authService';
 import { toast } from 'vue-sonner';
 
+document.title = "Register Kanban"
+
 const router = useRouter();
 const username = ref('');
 const email = ref('');

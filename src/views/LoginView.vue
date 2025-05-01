@@ -50,6 +50,8 @@ import { useRouter } from 'vue-router';
 import { getCurrentUser, getUserProfile, loginUser } from '../../services/authService';
 import { toast } from 'vue-sonner';
 
+document.title = "Login Kanban"
+
 const router = useRouter();
 const email = ref('');
 const password = ref('');

@@ -1,104 +1,104 @@
 <template>
   <auth-layout>
     <div class="min-h-screen w-full galaxy-bg p-6 overflow-hidden" :style="currentProjectId ? '' : 'position: fixed'">
-    <!-- Loading and error messages -->
-    <div v-if="loading" class="fixed inset-0 w-full bg-purple-600/10 text-white p-2 text-center z-50">
-      <div class="w-full min-h-screen flex flex-col justify-start items-center">
-        <div id="bounce-up">
-          <font-awesome-icon icon="circle-chevron-up" class="mb-4" size="xl" />
-          <div class="mb-40">Please select project above</div>
-        </div>
-        <div class="bg-white rounded-full fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-          <Vue3Lottie :animationData="LoadingJSON" :height="400" :width="400" />
-        </div>
-      </div>
-    </div>
-    <div v-if="error" class="fixed top-0 left-0 w-full bg-red-600 text-white p-2 text-center z-50">
-      {{ error }}
-    </div>
-    <div v-if="currentProjectId" class="container flex flex-col gap-4">
-      <!-- Task Creation Form -->
-      <div class="flex flex-col gap-2 bg-white/10 backdrop-blur-md rounded-xl p-6 mb-8 shadow-xl border border-white/20">
-        <h2 class="text-2xl font-semibold text-white">Create New Task</h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div class="grid gap-2 col-span-1 md:col-span-2">
-            <input v-model="newTask.title" placeholder="Task Title"
-              class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-purple-500" />
-            <textarea v-model="newTask.description" placeholder="Task Description"
-              class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-purple-500 h-24"></textarea>
+      <!-- Loading and error messages -->
+      <div v-if="loading" class="fixed inset-0 w-full bg-purple-600/10 text-white p-2 text-center z-50">
+        <div class="w-full min-h-screen flex flex-col justify-start items-center">
+          <div id="bounce-up">
+            <font-awesome-icon icon="circle-chevron-up" class="mb-4" size="xl" />
+            <div class="mb-40">Please select project above</div>
           </div>
-          <div class="flex flex-col gap-2">
-            <div class="flex gap-2">
-              <select v-model="newTask.status"
-                class="flex-1 p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
-                <option class="bg-black text-white border-red-200 rounded-lg" value="" disabled>Select a column</option>
-                <option class="bg-black text-white border-red-200 rounded-lg" v-for="column in columns" :key="column.id"
-                  :value="column.id">
-                  {{ column.name }}
-                </option>
-              </select>
-              <button @click="openColumnDialog" class="max-w-[150px] p-3 bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl">
-                <font-awesome-icon icon="table-columns" style="color: white" />
-              </button>
-            </div>
-            <button @click="addTask"
-              class="mt-4 bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl">
-              Create Task
-            </button>
+          <div class="bg-white rounded-full fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+            <Vue3Lottie :animationData="LoadingJSON" :height="400" :width="400" />
           </div>
         </div>
       </div>
-
-      <!-- Kanban Board -->
-      <div class="flex flex-nowrap gap-4 mt-2 scroll-auto overflow-x-auto min-h-[calc(100vh-350px)] pb-4">
-        <div v-for="column in columns" :key="column.id"
-          class="flex-1 flex flex-col gap-4 min-w-[300px] space-y-2 bg-white/10 backdrop-blur-md rounded-xl p-4 shadow-xl border border-white/20">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-xl font-semibold text-white">{{ column.name }}</h3>
-            <div class="bg-white/20 text-white text-sm px-2 py-1 rounded-full">
-              {{ tasksInColumn(column.id).length }}
+      <div v-if="error" class="fixed top-0 left-0 w-full bg-red-600 text-white p-2 text-center z-50">
+        {{ error }}
+      </div>
+      <div v-if="currentProjectId" class="container flex flex-col gap-4">
+        <!-- Task Creation Form -->
+        <div
+          class="flex flex-col gap-2 bg-white/10 backdrop-blur-md rounded-xl p-6 mb-8 shadow-xl border border-white/20">
+          <h2 class="text-2xl font-semibold text-white">Create New Task</h2>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="grid gap-2 col-span-1 md:col-span-2">
+              <input v-model="newTask.title" placeholder="Task Title"
+                class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-purple-500" />
+              <textarea v-model="newTask.description" placeholder="Task Description"
+                class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-purple-500 h-24"></textarea>
             </div>
-          </div>
-
-          <div class="min-h-[200px] flex flex-col gap-2 drop-zone" @dragover.prevent @drop="onDrop($event, column.id)">
-            <div v-for="task in tasksInColumn(column.id)" :key="task.id" :data-task-id="task.id"
-              :data-column-id="column.id" draggable="true" @dragstart="onDragStart($event, task, column.id)"
-              @dragenter.prevent @click="openEditModal(task)"
-              class="task-card bg-white/20 backdrop-blur-sm p-4 mb-4 rounded-lg border border-white/30 cursor-move hover:shadow-lg transition-all duration-200 hover:bg-white/30">
-              <div class="flex justify-between items-start mb-2">
-                <h4 class="text-white font-medium text-lg">{{ task.title }}</h4>
-                <span class="text-xs text-white/70">{{ formatDate(task.created_at) }}</span>
-              </div>
-              <p class="text-white/90 text-sm mb-2">{{ task.description }}</p>
-              <div class="flex justify-end mt-2">
-                <button @click.stop="removeTask(task.id)"
-                  class="text-xs bg-red-500 hover:bg-red-600 text-white py-1 px-2 rounded transition-colors duration-200">
-                  Delete
+            <div class="flex flex-col gap-2">
+              <div class="flex gap-2">
+                <select v-model="newTask.status"
+                  class="flex-1 p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
+                  <option class="bg-black text-white border-red-200 rounded-lg" value="" disabled>Select a column
+                  </option>
+                  <option class="bg-black text-white border-red-200 rounded-lg" v-for="column in columns"
+                    :key="column.id" :value="column.id">
+                    {{ column.name }}
+                  </option>
+                </select>
+                <button @click="openColumnDialog"
+                  class="max-w-[150px] p-3 bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl">
+                  <font-awesome-icon icon="table-columns" style="color: white" />
                 </button>
               </div>
+              <button @click="addTask"
+                class="mt-4 bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl">
+                Create Task
+              </button>
             </div>
-            <!-- Empty state placeholder visible only when column is empty -->
-            <div v-if="tasksInColumn(column.id).length === 0"
-              class="empty-column-placeholder border-2 border-dashed border-white/20 rounded-lg p-4 text-center text-white/50">
-              Drop task here
+          </div>
+        </div>
+
+        <!-- Kanban Board -->
+        <div class="flex flex-nowrap gap-4 mt-2 scroll-auto overflow-x-auto min-h-[calc(100vh-350px)] pb-4">
+          <div v-for="column in columns" :key="column.id"
+            class="flex-1 flex flex-col gap-4 min-w-[300px] space-y-2 bg-white/10 backdrop-blur-md rounded-xl p-4 shadow-xl border border-white/20">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-xl font-semibold text-white">{{ column.name }}</h3>
+              <div class="bg-white/20 text-white text-sm px-2 py-1 rounded-full">
+                {{ tasksInColumn(column.id).length }}
+              </div>
+            </div>
+
+            <div class="min-h-[200px] flex flex-col gap-2 drop-zone" @dragover.prevent
+              @drop="onDrop($event, column.id)">
+              <div v-for="task in tasksInColumn(column.id)" :key="task.id" :data-task-id="task.id"
+                :data-column-id="column.id" draggable="true" @dragstart="onDragStart($event, task, column.id)"
+                @dragenter.prevent @click="openEditModal(task)"
+                class="task-card bg-white/20 backdrop-blur-sm p-4 mb-4 rounded-lg border border-white/30 cursor-move hover:shadow-lg transition-all duration-200 hover:bg-white/30">
+                <div class="flex justify-between items-start mb-2">
+                  <h4 class="text-white font-medium text-lg">{{ task.title }}</h4>
+                  <span class="text-xs text-white/70">{{ formatDate(task.created_at) }}</span>
+                </div>
+                <p class="text-white/90 text-sm mb-2">{{ task.description }}</p>
+                <div class="flex justify-end mt-2">
+                  <button @click.stop="removeTask(task.id)"
+                    class="text-xs bg-red-500 hover:bg-red-600 text-white py-1 px-2 rounded transition-colors duration-200">
+                    Delete
+                  </button>
+                </div>
+              </div>
+              <!-- Empty state placeholder visible only when column is empty -->
+              <div v-if="tasksInColumn(column.id).length === 0"
+                class="empty-column-placeholder border-2 border-dashed border-white/20 rounded-lg p-4 text-center text-white/50">
+                Drop task here
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
   </auth-layout>
-  
+
   <!-- Show Project Dialog if no project selected -->
   <ProjectDialog v-if="showNoProjectDialog" @close="showNoProjectDialog = false" @select="handleProjectSelect" />
-  
+
   <!-- Column Management Dialog -->
-  <ColumnDialog 
-    v-if="showColumnDialog" 
-    :projectId="currentProjectId" 
-    @close="showColumnDialog = false" 
-    @update="handleColumnsUpdate" 
-  />
+  <ColumnDialog v-if="showColumnDialog" :projectId="currentProjectId" @close="showColumnDialog = false"
+    @update="handleColumnsUpdate" />
 
   <!-- Edit Task Modal -->
   <div v-if="isEditModalOpen" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
@@ -292,7 +292,7 @@ const fetchTasks = async () => {
   try {
     loading.value = true
     error.value = null
-    
+
     // Only fetch tasks if a project is selected
     if (currentProjectId.value) {
       tasks.value = await getTasks(currentProjectId.value)
@@ -358,7 +358,7 @@ const addTask = async () => {
       })
       return
     }
-    
+
     if (!currentProjectId.value) {
       error.value = 'Please select a project first'
       toast.error('Error', {
@@ -656,13 +656,16 @@ const updateTask = async () => {
 }
 
 @keyframes bounce {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0);
-    animation-timing-function: cubic-bezier(0.8,0,1,1);
+    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
   }
+
   50% {
     transform: translateY(-30px);
-    animation-timing-function: cubic-bezier(0,0,0.2,1);
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
   }
 }
 
