@@ -4,6 +4,14 @@
       <div class="navbar-brand">
         <router-link to="/" class="logo">Kanban Board</router-link>
       </div>
+      <div class="project-selector" v-if="currentUser && userProfile">
+        <div class="current-project" @click="openProjectDialog">
+          <span class="project-name">{{ currentProject ? currentProject.name : 'Select Project' }}</span>
+          <button class="select-project-btn">
+            <i class="fas fa-chevron-down"></i>
+          </button>
+        </div>
+      </div>
       <div class="navbar-user" v-if="currentUser && userProfile">
         <div class="user-info" @click="toggleDropdown">
           <div class="avatar" v-if="userProfile.avatar_url">
@@ -37,21 +45,33 @@
       @close="showProfileDialog = false"
       @update="handleProfileUpdate"
     />
+
+    <!-- Project Selection Dialog -->
+    <ProjectDialog
+      v-if="showProjectDialog"
+      @close="showProjectDialog = false"
+      @select="handleProjectSelect"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import { getCurrentUser, getUserProfile, logoutUser, type UserProfile } from '../../services/authService';
+import { getProjectById } from '../../services/projectService';
 import ProfileDialog from '@/components/ProfileDialog.vue';
+import ProjectDialog from '@/components/ProjectDialog.vue';
 
 // Component state
 const router = useRouter();
+const route = useRoute();
 const currentUser = ref<any>(null);
 const userProfile = ref<UserProfile | null>(null);
 const showDropdown = ref(false);
 const showProfileDialog = ref(false);
+const showProjectDialog = ref(false);
+const currentProject = ref<any>(null);
 
 // Load user data on component mount
 onMounted(async () => {
@@ -60,6 +80,9 @@ onMounted(async () => {
     if (user) {
       currentUser.value = user;
       userProfile.value = await getUserProfile(user.id);
+      
+      // Load current project if ID is in URL
+      await loadCurrentProject();
     }
   } catch (error) {
     console.error('Error loading user data:', error);
@@ -67,6 +90,11 @@ onMounted(async () => {
   
   // Add click outside listener
   document.addEventListener('click', handleClickOutside);
+});
+
+// Watch for changes in route to update current project
+watch(() => route.query.id, async () => {
+  await loadCurrentProject();
 });
 
 onUnmounted(() => {
@@ -107,6 +135,33 @@ const handleLogout = async () => {
 const handleProfileUpdate = async (updatedProfile: UserProfile) => {
   userProfile.value = updatedProfile;
 };
+
+// Load current project from route query param
+const loadCurrentProject = async () => {
+  try {
+    const projectId = route.query.id as string;
+    if (projectId) {
+      currentProject.value = await getProjectById(projectId);
+    } else {
+      currentProject.value = null;
+    }
+  } catch (error) {
+    console.error('Error loading project:', error);
+    currentProject.value = null;
+  }
+};
+
+// Open project selection dialog
+const openProjectDialog = () => {
+  showProjectDialog.value = true;
+};
+
+// Handle project selection
+const handleProjectSelect = (project: any) => {
+  // Navigate to the same route but with project ID in query
+  router.push({ query: { id: project.id } });
+  showProjectDialog.value = false;
+};
 </script>
 
 <style scoped>
@@ -137,8 +192,47 @@ const handleProfileUpdate = async (updatedProfile: UserProfile) => {
   text-decoration: none;
 }
 
-.navbar-user {
+.navbar-user,
+.project-selector {
   position: relative;
+}
+
+.project-selector {
+  display: flex;
+  align-items: center;
+}
+
+.current-project {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background-color: #f3f4f6;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.current-project:hover {
+  background-color: #e5e7eb;
+}
+
+.project-name {
+  font-weight: 500;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.select-project-btn {
+  background: none;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4b5563;
+  font-size: 0.75rem;
 }
 
 .user-info {

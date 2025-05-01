@@ -156,8 +156,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import moment from 'moment-timezone'
+import { useRoute } from 'vue-router'
 import AuthLayout from '../layouts/AuthLayout.vue'
 // External modules
 // Import Supabase Kanban service
@@ -179,6 +180,7 @@ interface NewTask {
   title: string
   description: string
   status: string
+  project_id: string
 }
 
 interface EditingTask extends NewTask {
@@ -229,11 +231,23 @@ const columns: Column[] = [
 // Tasks state
 const tasks = ref<SupabaseTask[]>([])
 
-// New task form state
+// Get route for project_id from query params
+const route = useRoute()
+
+// Current project ID from URL query
+const currentProjectId = computed(() => route.query.id as string || '')
+
+// New task object
 const newTask = ref<NewTask>({
   title: '',
   description: '',
-  status: 'planning',
+  status: 'todo',
+  project_id: currentProjectId.value
+})
+
+// Watch for changes in project ID to update form
+watch(() => currentProjectId.value, (newProjectId) => {
+  newTask.value.project_id = newProjectId
 })
 
 // Get tasks for a specific column
@@ -241,44 +255,73 @@ const tasksInColumn = (columnId: string): SupabaseTask[] => {
   return tasks.value.filter((task) => task.status === columnId)
 }
 
-// Load all tasks from Supabase
-const loadTasks = async () => {
+// Fetch tasks from Supabase
+const fetchTasks = async () => {
   try {
     loading.value = true
     error.value = null
-    tasks.value = await getTasks()
+    
+    // Only fetch tasks if a project is selected
+    if (currentProjectId.value) {
+      tasks.value = await getTasks(currentProjectId.value)
+    } else {
+      tasks.value = []
+    }
   } catch (err) {
-    console.error('Error loading tasks:', err)
+    console.error('Error fetching tasks:', err)
     error.value = 'Failed to load tasks. Please refresh the page.'
   } finally {
     loading.value = false
   }
 }
 
+// Watch for changes in project ID to refresh tasks
+watch(() => currentProjectId.value, () => {
+  fetchTasks()
+})
+
 // Add a new task
 const addTask = async () => {
-  if (!newTask.value.title.trim()) return
-
   try {
+    if (!newTask.value.title) {
+      error.value = 'Task title is required'
+      return
+    }
+    
+    if (!currentProjectId.value) {
+      error.value = 'Please select a project first'
+      toast.error('Error', {
+        description: 'Please select a project first',
+        duration: 3000
+      })
+      return
+    }
+
     loading.value = true
     error.value = null
 
-    // Create task in Supabase
-    const createdTask = await createTask({
+    const taskToCreate = {
       title: newTask.value.title,
       description: newTask.value.description,
       status: newTask.value.status,
-    })
+      project_id: currentProjectId.value
+    }
 
-    // Add to local state
+    const createdTask = await createTask(taskToCreate)
     tasks.value.unshift(createdTask)
 
     // Reset form
     newTask.value = {
       title: '',
       description: '',
-      status: 'planning',
+      status: 'todo',
+      project_id: currentProjectId.value
     }
+
+    toast.success('Success', {
+      description: 'Task created successfully',
+      duration: 3000
+    })
   } catch (err) {
     console.error('Error creating task:', err)
     error.value = 'Failed to create task. Please try again.'
@@ -288,10 +331,6 @@ const addTask = async () => {
     })
   } finally {
     loading.value = false
-    toast.success('Success', {
-      description: 'Task created successfully',
-      duration: 3000
-    })
   }
 }
 
@@ -323,8 +362,8 @@ const removeTask = async (taskId: string) => {
 }
 
 // Load tasks on component mount
-onMounted(() => {
-  loadTasks()
+onMounted(async () => {
+  fetchTasks()
 })
 
 // Handle drop event for Kanban drag-and-drop
@@ -420,6 +459,7 @@ const openEditModal = (task: SupabaseTask) => {
     title: task.title,
     description: task.description,
     status: task.status,
+    project_id: task.project_id,
     // We don't need to set start_task and end_task directly as we'll compute them from the date/time fields
     start_task_date: startDate ? formatDateForInput(startDate) : '',
     start_task_time: startDate ? formatTimeForInput(startDate) : '',

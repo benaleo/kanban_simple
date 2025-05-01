@@ -22,6 +22,11 @@ const router = createRouter({
       component: () => import('../views/RegisterView.vue'),
       meta: { guestOnly: true }
     },
+    {
+      // Catch all route - redirect to login
+      path: '/:pathMatch(.*)*',
+      redirect: '/login'
+    }
   ],
 })
 

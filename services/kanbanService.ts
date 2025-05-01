@@ -10,6 +10,7 @@ export interface Task {
   created_at: Date;
   start_task?: Date | null;
   end_task?: Date | null;
+  project_id: string;
 }
 
 // Table name in Supabase
@@ -17,12 +18,20 @@ const TASKS_TABLE = 'tasks';
 
 /**
  * Fetch all tasks from Supabase
+ * @param projectId Optional project ID to filter tasks
  */
-export const getTasks = async (): Promise<Task[]> => {
-  const { data, error } = await supabase
+export const getTasks = async (projectId?: string): Promise<Task[]> => {
+  let query = supabase
     .from(TASKS_TABLE)
     .select('*')
     .order('created_at', { ascending: false });
+  
+  // Filter by project_id if provided
+  if (projectId) {
+    query = query.eq('project_id', projectId);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error('Error fetching tasks:', error);
