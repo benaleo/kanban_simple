@@ -1,7 +1,7 @@
 <template>
   <div class="layout-container">
     <header class="navbar">
-      <div class="navbar-brand">
+      <div class="navbar-brand" v-if="!isMobile"gh>
         <router-link to="/" class="logo">Kanban Board</router-link>
       </div>
       <div class="project-selector" v-if="currentUser && userProfile">
@@ -162,6 +162,13 @@ const handleProjectSelect = (project: any) => {
   router.push({ query: { id: project.id } });
   showProjectDialog.value = false;
 };
+
+const isMobile = ref(false);
+
+onMounted(() => {
+  isMobile.value = window.innerWidth < 768;
+});
+
 </script>
 
 <style scoped>
