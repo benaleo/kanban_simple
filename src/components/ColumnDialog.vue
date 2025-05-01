@@ -297,6 +297,11 @@ async function deleteColumn() {
 </script>
 
 <style scoped>
+
+input {
+  color: #111827;
+}
+
 .dialog-overlay {
   position: fixed;
   top: 0;
