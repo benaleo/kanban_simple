@@ -71,8 +71,8 @@
           <p class="warning">This will delete all tasks associated with this project and cannot be undone.</p>
           
           <div class="dialog-actions">
-            <button @click="cancelDelete" class="cancel-button">Cancel</button>
-            <button @click="deleteProject" class="delete-button" :disabled="isSubmitting">
+            <button @click="cancelDelete" class="btn bg-slate-200 hover:bg-slate-400 transition-all duration-300 whitespace-nowrap">Cancel</button>
+            <button @click="deleteProject" class="btn text-white bg-red-400 hover:bg-red-500 transition-all duration-300 whitespace-nowrap" :disabled="isSubmitting">
               {{ isSubmitting ? 'Deleting...' : 'Delete Project' }}
             </button>
           </div>
@@ -96,6 +96,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { getProjects, createProject, updateProject, deleteProject as deleteProjectService } from "../../services/projectService";
+import { toast } from 'vue-sonner';
 
 // Props and emits
 const emit = defineEmits(['close', 'select']);
@@ -208,8 +209,18 @@ async function saveProject() {
     // Reset form state
     isEditMode.value = false;
     isAddMode.value = false;
+
+    // Show success toast
+    toast.success('Success', {
+      description: 'Project saved successfully',
+      duration: 3000
+    })
   } catch (error: any) {
     errorMessage.value = error.message || 'Failed to save project';
+    toast.error('Error', {
+      description: 'Failed to save project. Please try again.',
+      duration: 3000
+    })
   } finally {
     isSubmitting.value = false;
   }
@@ -245,8 +256,18 @@ async function deleteProject() {
     // Reset state
     showDeleteConfirm.value = false;
     projectToDelete.value = null;
+
+    // Show success toast
+    toast.success('Success', {
+      description: 'Project deleted successfully',
+      duration: 3000
+    })
   } catch (error: any) {
     errorMessage.value = error.message || 'Failed to delete project';
+    toast.error('Error', {
+      description: 'Failed to delete project. Please try again.',
+      duration: 3000
+    })
   } finally {
     isSubmitting.value = false;
   }

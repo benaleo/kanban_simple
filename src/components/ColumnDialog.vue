@@ -86,6 +86,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, defineProps, defineEmits } from 'vue';
 import { getColumns, createColumn, updateColumn, deleteColumn as deleteColumnService } from '../../services/columnService';
+import { toast } from 'vue-sonner';
 
 // Props and emits
 const props = defineProps<{
@@ -253,8 +254,18 @@ async function saveColumn() {
     
     // Emit update event
     emit('update', columns.value);
+
+    // Show success toast
+    toast.success('Success', {
+      description: 'Column saved successfully',
+      duration: 3000
+    })
   } catch (error: any) {
     errorMessage.value = error.message || 'Failed to save column';
+    toast.error('Error', {
+      description: 'Failed to save column. Please try again.',
+      duration: 3000
+    })
   } finally {
     isSubmitting.value = false;
   }
@@ -288,8 +299,18 @@ async function deleteColumn() {
     
     // Emit update event
     emit('update', columns.value);
+
+    // Show success toast
+    toast.success('Success', {
+      description: 'Column deleted successfully',
+      duration: 3000
+    })
   } catch (error: any) {
     errorMessage.value = error.message || 'Failed to delete column';
+    toast.error('Error', {
+      description: 'Failed to delete column. Please try again.',
+      duration: 3000
+    })
   } finally {
     isSubmitting.value = false;
   }

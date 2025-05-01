@@ -48,13 +48,12 @@
                 </div>
                 <span>Uploading {{ uploadProgress }}%</span>
               </div>
-              <div v-else class="avatar-preview-container">
+              <div v-else class="avatar-preview-container relative">
                 <div class="avatar-preview">
                   <img :src="formData.avatar_url" alt="Avatar preview" />
                 </div>
                 <div class="avatar-controls">
-                  <button type="button" class="change-avatar-button" @click="triggerFileInput">Change Image</button>
-                  <button type="button" class="remove-avatar-button" @click="removeAvatar">Remove</button>
+                  <button type="button" class="remove-avatar-button absolute top-0 right-2" @click="removeAvatar">Remove</button>
                 </div>
               </div>
             </div>
@@ -424,8 +423,8 @@ input {
 
 .avatar-preview {
   margin: 0.75rem 0;
-  width: 100px;
-  height: 100px;
+  max-width: 200px;
+  max-height: 200px;
   border-radius: 50%;
   overflow: hidden;
   border: 2px solid #e5e7eb;
