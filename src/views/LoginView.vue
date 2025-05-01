@@ -71,7 +71,6 @@ const handleLogin = async () => {
     });
 
   } catch (error: any) {
-    errorMessage.value = error.message || 'Failed to login. Please try again.';
     toast.error("Failed Login", {
       duration: 5000,
       description: "Failed to login. Please try again."
