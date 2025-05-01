@@ -1,56 +1,40 @@
 <template>
   <div class="min-h-screen w-full galaxy-bg p-6 overflow-hidden">
     <!-- Loading and error messages -->
-    <div
-      v-if="loading"
-      class="fixed top-0 left-0 w-full bg-purple-600 text-white p-2 text-center z-50"
-    >
+    <div v-if="loading" class="fixed top-0 left-0 w-full bg-purple-600 text-white p-2 text-center z-50">
       Loading tasks...
     </div>
     <div v-if="error" class="fixed top-0 left-0 w-full bg-red-600 text-white p-2 text-center z-50">
       {{ error }}
     </div>
     <div class="container flex flex-col gap-4">
-      <h1 class="text-4xl font-bold text-white text-center mb-8">Avoria Kanban</h1>
+      <h1 class="text-4xl font-bold text-white text-center mb-8">Beno Kanban</h1>
+      <div class="flex justify-center text-white">
+        Time : {{ moment().format('MMMM Do YYYY, hh:mm:ss A') }}
+      </div>
 
       <!-- Task Creation Form -->
-      <div
-        class="bg-white/10 backdrop-blur-md rounded-xl p-6 mb-8 shadow-xl border border-white/20"
-      >
+      <div class="bg-white/10 backdrop-blur-md rounded-xl p-6 mb-8 shadow-xl border border-white/20">
         <h2 class="text-2xl font-semibold text-white mb-4">Create New Task</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div class="grid gap-2 col-span-1 md:col-span-2">
-            <input
-              v-model="newTask.title"
-              placeholder="Task Title"
-              class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-purple-500"
-            />
-            <textarea
-              v-model="newTask.description"
-              placeholder="Task Description"
-              class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-purple-500 h-24"
-            ></textarea>
+            <input v-model="newTask.title" placeholder="Task Title"
+              class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-purple-500" />
+            <textarea v-model="newTask.description" placeholder="Task Description"
+              class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-purple-500 h-24"></textarea>
           </div>
           <div class="flex flex-col gap-2">
             <div>
-              <select
-                v-model="newTask.status"
-                class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-              >
-                <option
-                  class="bg-black text-white border-red-200 rounded-lg"
-                  v-for="column in columns"
-                  :key="column.id"
-                  :value="column.id"
-                >
+              <select v-model="newTask.status"
+                class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
+                <option class="bg-black text-white border-red-200 rounded-lg" v-for="column in columns" :key="column.id"
+                  :value="column.id">
                   {{ column.title }}
                 </option>
               </select>
             </div>
-            <button
-              @click="addTask"
-              class="mt-4 bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl"
-            >
+            <button @click="addTask"
+              class="mt-4 bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl">
               Create Task
             </button>
           </div>
@@ -59,11 +43,8 @@
 
       <!-- Kanban Board -->
       <div class="flex flex-nowrap gap-4 mt-2 scroll-auto overflow-x-auto min-h-[calc(100vh-350px)] pb-4">
-        <div
-          v-for="column in columns"
-          :key="column.id"
-          class="flex-1 min-w-[300px] bg-white/10 backdrop-blur-md rounded-xl p-4 shadow-xl border border-white/20"
-        >
+        <div v-for="column in columns" :key="column.id"
+          class="flex-1 flex flex-col gap-4 min-w-[300px] space-y-2 bg-white/10 backdrop-blur-md rounded-xl p-4 shadow-xl border border-white/20">
           <div class="flex items-center justify-between mb-4">
             <h3 class="text-xl font-semibold text-white">{{ column.title }}</h3>
             <div class="bg-white/20 text-white text-sm px-2 py-1 rounded-full">
@@ -71,41 +52,26 @@
             </div>
           </div>
 
-          <div
-            class="min-h-[200px] flex flex-col gap-2 drop-zone"
-            @dragover.prevent
-            @drop="onDrop($event, column.id)"
-          >
-            <div
-              v-for="task in tasksInColumn(column.id)"
-              :key="task.id"
-              :data-task-id="task.id"
-              :data-column-id="column.id"
-              draggable="true"
-              @dragstart="onDragStart($event, task, column.id)"
-              @dragenter.prevent
-              @click="openEditModal(task)"
-              class="task-card bg-white/20 backdrop-blur-sm p-4 mb-4 rounded-lg border border-white/30 cursor-move hover:shadow-lg transition-all duration-200 hover:bg-white/30"
-            >
+          <div class="min-h-[200px] flex flex-col gap-2 drop-zone" @dragover.prevent @drop="onDrop($event, column.id)">
+            <div v-for="task in tasksInColumn(column.id)" :key="task.id" :data-task-id="task.id"
+              :data-column-id="column.id" draggable="true" @dragstart="onDragStart($event, task, column.id)"
+              @dragenter.prevent @click="openEditModal(task)"
+              class="task-card bg-white/20 backdrop-blur-sm p-4 mb-4 rounded-lg border border-white/30 cursor-move hover:shadow-lg transition-all duration-200 hover:bg-white/30">
               <div class="flex justify-between items-start mb-2">
                 <h4 class="text-white font-medium text-lg">{{ task.title }}</h4>
                 <span class="text-xs text-white/70">{{ formatDate(task.created_at) }}</span>
               </div>
               <p class="text-white/90 text-sm mb-2">{{ task.description }}</p>
               <div class="flex justify-end mt-2">
-                <button
-                  @click.stop="removeTask(task.id)"
-                  class="text-xs bg-red-500 hover:bg-red-600 text-white py-1 px-2 rounded transition-colors duration-200"
-                >
+                <button @click.stop="removeTask(task.id)"
+                  class="text-xs bg-red-500 hover:bg-red-600 text-white py-1 px-2 rounded transition-colors duration-200">
                   Delete
                 </button>
               </div>
             </div>
             <!-- Empty state placeholder visible only when column is empty -->
-            <div
-              v-if="tasksInColumn(column.id).length === 0"
-              class="empty-column-placeholder border-2 border-dashed border-white/20 rounded-lg p-4 text-center text-white/50"
-            >
+            <div v-if="tasksInColumn(column.id).length === 0"
+              class="empty-column-placeholder border-2 border-dashed border-white/20 rounded-lg p-4 text-center text-white/50">
               Drop task here
             </div>
           </div>
@@ -116,87 +82,70 @@
 
   <!-- Edit Task Modal -->
   <div v-if="isEditModalOpen" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
-    <div 
-      class="bg-white/20 backdrop-blur-md rounded-xl p-6 shadow-xl border border-white/20 w-full max-w-md mx-4"
-      @click.stop
-    >
+    <div class="bg-white/20 backdrop-blur-md rounded-xl p-6 shadow-xl border border-white/20 w-full max-w-md mx-4"
+      @click.stop>
       <div class="flex justify-between items-center mb-4">
         <h2 class="text-2xl font-semibold text-white">Edit Task</h2>
-        <button 
-          @click="closeEditModal" 
-          class="text-white hover:text-red-300 transition-colors"
-        >
+        <button @click="closeEditModal" class="text-white hover:text-red-300 transition-colors">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
       </div>
-      
+
       <div class="flex flex-col gap-2">
         <div>
           <label class="block text-white text-sm font-medium mb-1">Title</label>
-          <input
-            v-model="editingTask.title"
-            class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-purple-500"
-          />
+          <input v-model="editingTask.title"
+            class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-purple-500" />
         </div>
-        
+
         <div>
           <label class="block text-white text-sm font-medium mb-1">Description</label>
-          <textarea
-            v-model="editingTask.description"
-            class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-purple-500 h-24"
-          ></textarea>
+          <textarea v-model="editingTask.description"
+            class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-purple-500 h-24"></textarea>
         </div>
-        
+
         <div>
           <label class="block text-white text-sm font-medium mb-1">Status</label>
-          <select
-            v-model="editingTask.status"
-            class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-          >
-            <option
-              class="bg-black text-white border-red-200 rounded-lg"
-              v-for="column in columns"
-              :key="column.id"
-              :value="column.id"
-            >
+          <select v-model="editingTask.status"
+            class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
+            <option class="bg-black text-white border-red-200 rounded-lg" v-for="column in columns" :key="column.id"
+              :value="column.id">
               {{ column.title }}
             </option>
           </select>
         </div>
-        
+
         <div class="flex gap-2 items-start">
           <div class="flex-1">
-          <label class="block text-white text-sm font-medium mb-1">Start Date</label>
-          <input
-            type="date"
-            v-model="editingTask.start_task"
-            class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-          />
-        </div>
-        
-        <div class="flex-1">
-          <label class="block text-white text-sm font-medium mb-1">End Date</label>
-          <input
-            type="date"
-            v-model="editingTask.end_task"
-            class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-          />
-        </div>
-        
+            <label class="block text-white text-sm font-medium mb-1">Start Date & Time</label>
+            <div class="flex flex-col items-end gap-2">
+              <input type="date" v-model="editingTask.start_task_date"
+                class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
+              <input type="time" v-model="editingTask.start_task_time"
+                class="w-3/4 p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
+            </div>
+          </div>
+
+          <div class="flex-1">
+            <label class="block text-white text-sm font-medium mb-1">End Date & Time</label>
+            <div class="flex flex-col items-end gap-2">
+              <input type="date" v-model="editingTask.end_task_date"
+                class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
+              <input type="time" v-model="editingTask.end_task_time"
+                class="w-3/4 p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
+            </div>
+          </div>
+
         </div>
         <div class="flex justify-end gap-2 mt-6">
-          <button 
-            @click="closeEditModal" 
-            class="bg-white/20 hover:bg-white/30 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-          >
+          <button @click="closeEditModal"
+            class="bg-white/20 hover:bg-white/30 text-white font-medium py-2 px-4 rounded-lg transition-colors">
             Cancel
           </button>
-          <button 
-            @click="updateTask" 
-            class="bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-bold py-2 px-4 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl"
-          >
+          <button @click="updateTask"
+            class="bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-bold py-2 px-4 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl">
             Save Changes
           </button>
         </div>
@@ -211,6 +160,7 @@ import { onMounted, ref } from 'vue'
 // Import Supabase Kanban service
 import type { Task as SupabaseTask } from '../../services/kanbanService'
 import { createTask, deleteTask, getTasks, updateTaskStatus, updateTask as updateTaskService } from '../../services/kanbanService'
+import moment from 'moment-timezone'
 
 // Define types
 interface Column {
@@ -231,6 +181,10 @@ interface EditingTask extends NewTask {
   status: string
   start_task?: string
   end_task?: string
+  start_task_date?: string
+  start_task_time?: string
+  end_task_date?: string
+  end_task_time?: string
 }
 
 // Store the currently dragged task
@@ -249,7 +203,11 @@ const editingTask = ref<EditingTask>({
   description: '',
   status: '',
   start_task: '',
-  end_task: ''
+  end_task: '',
+  start_task_date: '',
+  start_task_time: '',
+  end_task_date: '',
+  end_task_time: ''
 })
 
 // Define columns
@@ -415,23 +373,37 @@ const formatDate = (date: Date): string => {
 const openEditModal = (task: SupabaseTask) => {
   // Prevent opening modal when dragging
   if (draggedTaskId.value) return
-  
-  // Format dates for input fields (YYYY-MM-DD format)
+
+  // Format dates for input fields (YYYY-MM-DD format) using moment-timezone
   const formatDateForInput = (date: Date | null): string => {
     if (!date) return ''
-    const d = new Date(date)
-    return d.toISOString().split('T')[0]
+    // Format date to YYYY-MM-DD in local timezone
+    return moment(date).tz('Asia/Jakarta').format('YYYY-MM-DD')
   }
-  
+
+  // Format time for input fields (HH:MM format) using moment-timezone
+  const formatTimeForInput = (date: Date | null): string => {
+    if (!date) return ''
+    // Format time to HH:mm in local timezone
+    return moment(date).tz('Asia/Jakarta').format('HH:mm')
+  }
+
+  // Convert dates from UTC to local timezone
+  const startDate = task.start_task ? moment(task.start_task).tz('Asia/Jakarta').toDate() : null
+  const endDate = task.end_task ? moment(task.end_task).tz('Asia/Jakarta').toDate() : null
+
   editingTask.value = {
     id: task.id,
     title: task.title,
     description: task.description,
     status: task.status,
-    start_task: task.start_task ? formatDateForInput(new Date(task.start_task)) : '',
-    end_task: task.end_task ? formatDateForInput(new Date(task.end_task)) : ''
+    // We don't need to set start_task and end_task directly as we'll compute them from the date/time fields
+    start_task_date: startDate ? formatDateForInput(startDate) : '',
+    start_task_time: startDate ? formatTimeForInput(startDate) : '',
+    end_task_date: endDate ? formatDateForInput(endDate) : '',
+    end_task_time: endDate ? formatTimeForInput(endDate) : ''
   }
-  
+
   isEditModalOpen.value = true
 }
 
@@ -445,19 +417,37 @@ const updateTask = async () => {
   try {
     loading.value = true
     error.value = null
-    
+
+    // Combine date and time for start_task using moment-timezone to preserve local timezone
+    let startTaskDate = null
+    if (editingTask.value.start_task_date) {
+      const dateStr = editingTask.value.start_task_date
+      const timeStr = editingTask.value.start_task_time || '00:00'
+      // Use moment to create a date in the local timezone (Asia/Jakarta)
+      startTaskDate = moment.tz(`${dateStr} ${timeStr}`, 'YYYY-MM-DD HH:mm', 'UTC').toDate()
+    }
+
+    // Combine date and time for end_task using moment-timezone
+    let endTaskDate = null
+    if (editingTask.value.end_task_date) {
+      const dateStr = editingTask.value.end_task_date
+      const timeStr = editingTask.value.end_task_time || '00:00'
+      // Use moment to create a date in the local timezone (Asia/Jakarta)
+      endTaskDate = moment.tz(`${dateStr} ${timeStr}`, 'YYYY-MM-DD HH:mm', 'UTC').toDate()
+    }
+
     const taskId = editingTask.value.id
     const updates = {
       title: editingTask.value.title,
       description: editingTask.value.description,
       status: editingTask.value.status,
-      start_task: editingTask.value.start_task ? new Date(editingTask.value.start_task) : null,
-      end_task: editingTask.value.end_task ? new Date(editingTask.value.end_task) : null
+      start_task: startTaskDate,
+      end_task: endTaskDate
     }
-    
+
     // Update in Supabase
     const updatedTask = await updateTaskService(taskId, updates)
-    
+
     // Update in local state
     const taskIndex = tasks.value.findIndex(t => t.id === taskId)
     if (taskIndex !== -1) {
@@ -466,7 +456,7 @@ const updateTask = async () => {
         ...updatedTask
       }
     }
-    
+
     // Close modal
     closeEditModal()
   } catch (err) {
@@ -510,7 +500,7 @@ const updateTask = async () => {
   pointer-events: none;
 }
 
-.galaxy-bg > * {
+.galaxy-bg>* {
   position: relative;
   z-index: 2;
 }
@@ -519,9 +509,11 @@ const updateTask = async () => {
   0% {
     background-position: 0% 50%;
   }
+
   50% {
     background-position: 100% 50%;
   }
+
   100% {
     background-position: 0% 50%;
   }
