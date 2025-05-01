@@ -3,8 +3,9 @@
     <!-- Loading and error messages -->
     <div v-if="loading" class="fixed inset-0 w-full bg-purple-600/10 text-white p-2 text-center z-50">
       <div class="w-full min-h-screen flex justify-center items-center">
-      Loading tasks...
-
+        <div class="bg-white rounded-full">
+          <Vue3Lottie :animationData="LoadingJSON" :height="400" :width="400" />
+        </div>
       </div>
     </div>
     <div v-if="error" class="fixed top-0 left-0 w-full bg-red-600 text-white p-2 text-center z-50">
@@ -167,6 +168,8 @@ import moment from 'moment-timezone'
 
 document.title = "Beno Kanban"
 import { toast } from 'vue-sonner'
+import { Vue3Lottie } from 'vue3-lottie'
+import LoadingJSON from "@/assets/html/loading.json"
 
 // Define types
 interface Column {
