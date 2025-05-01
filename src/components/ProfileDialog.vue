@@ -21,16 +21,44 @@
           </div>
           
           <div class="form-group">
-            <label for="avatarUrl">Avatar URL</label>
-            <input 
-              type="text" 
-              id="avatarUrl" 
-              v-model="formData.avatar_url" 
-              class="form-input"
-            />
-            <div class="avatar-preview" v-if="formData.avatar_url">
-              <img :src="formData.avatar_url" alt="Avatar preview" />
+            <label for="avatarUpload">Profile Image</label>
+            <div 
+              class="drop-zone" 
+              @dragover.prevent="dragOver = true" 
+              @dragleave.prevent="dragOver = false"
+              @drop.prevent="handleDrop($event)"
+              :class="{ 'drop-zone-active': dragOver }"
+            >
+              <div v-if="!formData.avatar_url && !isUploading" class="drop-message">
+                <i class="material-icons">cloud_upload</i>
+                <p>Drag & drop an image here or click to browse</p>
+                <input 
+                  type="file" 
+                  id="avatarUpload" 
+                  @change="handleFileSelect"
+                  accept="image/*"
+                  class="file-input"
+                  ref="fileInput"
+                />
+                <button type="button" class="browse-button" @click="triggerFileInput">Browse Files</button>
+              </div>
+              <div v-else-if="isUploading" class="upload-progress">
+                <div class="progress-bar">
+                  <div class="progress-fill" :style="{ width: `${uploadProgress}%` }"></div>
+                </div>
+                <span>Uploading {{ uploadProgress }}%</span>
+              </div>
+              <div v-else class="avatar-preview-container">
+                <div class="avatar-preview">
+                  <img :src="formData.avatar_url" alt="Avatar preview" />
+                </div>
+                <div class="avatar-controls">
+                  <button type="button" class="change-avatar-button" @click="triggerFileInput">Change Image</button>
+                  <button type="button" class="remove-avatar-button" @click="removeAvatar">Remove</button>
+                </div>
+              </div>
             </div>
+            <div v-if="uploadError" class="error-message">{{ uploadError }}</div>
           </div>
           
           <div class="password-section">
@@ -71,22 +99,122 @@
 </template>
 
 <script setup lang="ts">
-import { ref, defineProps, defineEmits } from 'vue';
-import { updateUserProfile, updatePassword, type UserProfile } from '../../services/authService';
+import { ref, defineProps, defineEmits, onMounted, computed } from 'vue';
+import { updateUserProfile, updatePassword, type UserProfile, getCurrentUser, getUserProfile } from '../../services/authService';
+import { useImageUpload } from '../composables/useImageUpload';
+import type { User } from '@supabase/supabase-js';
 
-const props = defineProps<{
-  user: UserProfile | null;
-}>();
+const currentUser = ref<User | null>(null);
+const userProfile = ref<UserProfile | null>(null);
+
+// Function to trigger file input click
+const triggerFileInput = () => {
+  if (fileInput.value) {
+    fileInput.value.click();
+  }
+};
+
+// Handle file selection from input
+const handleFileSelect = async (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  if (target.files && target.files.length > 0) {
+    await uploadAvatarImage(target.files[0]);
+  }
+};
+
+// Handle file drop
+const handleDrop = async (event: DragEvent) => {
+  dragOver.value = false;
+  if (event.dataTransfer?.files && event.dataTransfer.files.length > 0) {
+    await uploadAvatarImage(event.dataTransfer.files[0]);
+  }
+};
+
+// Upload avatar image to Supabase storage
+const uploadAvatarImage = async (file: File) => {
+  try {
+    // Check if the bucket exists before attempting upload
+    const bucketExists = await checkBucketExists();
+    if (!bucketExists) {
+      throw new Error('Storage bucket does not exist or you do not have access. Please contact the administrator.');
+    }
+    
+    // Upload the image and get the URL
+    const imageUrl = await uploadImage(file);
+    
+    // Update form data with the new URL
+    formData.value.avatar_url = imageUrl;
+  } catch (error: any) {
+    console.error('Error uploading image:', error);
+    errorMessage.value = error.message || 'Failed to upload image';
+  }
+};
+
+// Remove avatar and delete image from Supabase storage
+const removeAvatar = async () => {
+  if (formData.value.avatar_url) {
+    try {
+      // Extract the path after the bucket domain
+      // Example: https://<project>.supabase.co/storage/v1/object/public/kanban-images/filename.png
+      const url = formData.value.avatar_url;
+      const match = url.match(/\/kanban-images\/(.*)$/);
+      if (match && match[1]) {
+        const filePath = `kanban-images/${match[1]}`;
+        console.log("file path", filePath);
+        await deleteImage(filePath);
+      }
+    } catch (error) {
+      console.error('Failed to delete image from storage:', error);
+    }
+  }
+  formData.value.avatar_url = '';
+};
+
+onMounted(async () => {
+  try {
+    // Get current user
+    currentUser.value = await getCurrentUser();
+    console.log("current user", currentUser.value?.id);
+    
+    if (currentUser.value) {
+      // Get user profile
+      userProfile.value = await getUserProfile(currentUser.value.id);
+      console.log("user profile", userProfile.value);
+      
+      if (userProfile.value) {
+        // Initialize form data with the loaded profile (update fields individually for reactivity)
+        formData.value.username = userProfile.value.username || '';
+        formData.value.avatar_url = userProfile.value.avatar_url || '';
+        formData.value.password = '';
+        formData.value.confirmPassword = '';
+      }
+    }
+  } catch (error) {
+    console.error('Error loading user profile:', error);
+    errorMessage.value = 'Failed to load user profile';
+  }
+});
+
+// Removed user prop as we're loading the profile directly in onMounted
+defineProps<{}>();
 
 const emit = defineEmits(['close', 'update']);
 
-// Form data
+// Use the image upload composable
+const { isUploading, uploadError, uploadProgress, uploadImage, deleteImage, checkBucketExists } = useImageUpload();
+
+// Form data - initialized with default empty values
 const formData = ref({
-  username: props.user?.username || '',
-  avatar_url: props.user?.avatar_url || '',
+  username: '',
+  avatar_url: '',
   password: '',
   confirmPassword: ''
 });
+console.log("form data", formData.value);
+console.log("userProfile");
+// Drag and drop state
+const dragOver = ref(false);
+const fileInput = ref<HTMLInputElement | null>(null);
 
 const errorMessage = ref('');
 const isSubmitting = ref(false);
@@ -112,7 +240,7 @@ const handleSubmit = async () => {
       }
     }
     
-    if (!props.user) {
+    if (!userProfile.value) {
       errorMessage.value = 'User data not found';
       isSubmitting.value = false;
       return;
@@ -124,7 +252,8 @@ const handleSubmit = async () => {
       avatar_url: formData.value.avatar_url
     };
     
-    const updatedProfile = await updateUserProfile(props.user.id, profileUpdates);
+    // Use the correct id field from the profile for the update
+    const updatedProfile = await updateUserProfile(userProfile.value.id, profileUpdates);
     
     // Update password if provided
     if (formData.value.password) {
@@ -143,6 +272,9 @@ const handleSubmit = async () => {
 </script>
 
 <style scoped>
+input {
+  color: #111827;
+}
 .dialog-overlay {
   position: fixed;
   top: 0;
@@ -212,10 +344,88 @@ const handleSubmit = async () => {
   font-size: 1rem;
 }
 
-.avatar-preview {
+.drop-zone {
+  border: 2px dashed #d1d5db;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  text-align: center;
+  transition: all 0.3s ease;
+  background-color: #f9fafb;
+  cursor: pointer;
+  margin-bottom: 1rem;
+}
+
+.drop-zone-active {
+  border-color: #4f46e5;
+  background-color: rgba(79, 70, 229, 0.1);
+}
+
+.drop-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #6b7280;
+}
+
+.drop-message i {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  color: #9ca3af;
+}
+
+.drop-message p {
+  margin: 0.5rem 0;
+  font-size: 0.875rem;
+}
+
+.file-input {
+  display: none;
+}
+
+.browse-button {
+  padding: 0.5rem 1rem;
+  background-color: #f3f4f6;
+  color: #4b5563;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  cursor: pointer;
   margin-top: 0.75rem;
-  width: 80px;
-  height: 80px;
+  transition: all 0.2s ease;
+}
+
+.browse-button:hover {
+  background-color: #e5e7eb;
+}
+
+.upload-progress {
+  padding: 1rem;
+}
+
+.progress-bar {
+  height: 0.5rem;
+  background-color: #e5e7eb;
+  border-radius: 0.25rem;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: #4f46e5;
+  transition: width 0.3s ease;
+}
+
+.avatar-preview-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.avatar-preview {
+  margin: 0.75rem 0;
+  width: 100px;
+  height: 100px;
   border-radius: 50%;
   overflow: hidden;
   border: 2px solid #e5e7eb;
@@ -225,6 +435,41 @@ const handleSubmit = async () => {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.avatar-controls {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.change-avatar-button,
+.remove-avatar-button {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.75rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.change-avatar-button {
+  background-color: #f3f4f6;
+  color: #4b5563;
+  border: 1px solid #d1d5db;
+}
+
+.change-avatar-button:hover {
+  background-color: #e5e7eb;
+}
+
+.remove-avatar-button {
+  background-color: #fee2e2;
+  color: #ef4444;
+  border: 1px solid #fecaca;
+}
+
+.remove-avatar-button:hover {
+  background-color: #fecaca;
 }
 
 .password-section {
