@@ -8,6 +8,8 @@ export interface Task {
   description: string;
   status: string;
   created_at: Date;
+  start_task?: Date | null;
+  end_task?: Date | null;
 }
 
 // Table name in Supabase
