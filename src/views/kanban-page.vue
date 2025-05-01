@@ -1,5 +1,6 @@
 <template>
-  <div class="min-h-screen w-full galaxy-bg p-6 overflow-hidden">
+  <auth-layout>
+    <div class="min-h-screen w-full galaxy-bg p-6 overflow-hidden">
     <!-- Loading and error messages -->
     <div v-if="loading" class="fixed inset-0 w-full bg-purple-600/10 text-white p-2 text-center z-50">
       <div class="w-full min-h-screen flex justify-center items-center">
@@ -83,6 +84,7 @@
       </div>
     </div>
   </div>
+  </auth-layout>
 
   <!-- Edit Task Modal -->
   <div v-if="isEditModalOpen" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
@@ -159,12 +161,13 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import moment from 'moment-timezone'
+import AuthLayout from '../layouts/AuthLayout.vue'
 // External modules
 // Import Supabase Kanban service
 import type { Task as SupabaseTask } from '../../services/kanbanService'
-import { createTask, deleteTask, getTasks, updateTaskStatus, updateTask as updateTaskService } from '../../services/kanbanService'
-import moment from 'moment-timezone'
+import { createTask, getTasks, updateTask as updateTaskService, deleteTask, updateTaskStatus } from '../../services/kanbanService'
 
 document.title = "Beno Kanban"
 import { toast } from 'vue-sonner'
