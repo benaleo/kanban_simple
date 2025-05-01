@@ -32,10 +32,10 @@
                 
                 <div class="column-actions">
                   <button @click="editColumn(column)" class="edit-button" title="Edit column">
-                    <i class="fas fa-edit"></i>
+                    <font-awesome-icon icon="edit" style="color: white" />
                   </button>
                   <button @click="confirmDeleteColumn(column)" class="delete-button" title="Delete column">
-                    <i class="fas fa-trash"></i>
+                    <font-awesome-icon icon="trash" style="color: white" />
                   </button>
                 </div>
               </div>
@@ -72,8 +72,8 @@
           <p class="warning">This will move all tasks in this column to 'unassigned' status and cannot be undone.</p>
           
           <div class="dialog-actions">
-            <button @click="cancelDelete" class="cancel-button">Cancel</button>
-            <button @click="deleteColumn" class="delete-button" :disabled="isSubmitting">
+            <button @click="cancelDelete" class="btn bg-slate-200 hover:bg-slate-400 transition-all duration-300 whitespace-nowrap">Cancel</button>
+            <button @click="deleteColumn" class="btn text-white bg-red-400 hover:bg-red-500 transition-all duration-300 whitespace-nowrap" :disabled="isSubmitting">
               {{ isSubmitting ? 'Deleting...' : 'Delete Column' }}
             </button>
           </div>
@@ -400,17 +400,6 @@ input {
   cursor: pointer;
 }
 
-.delete-button {
-  padding: 0.625rem 1rem;
-  background-color: #ef4444;
-  color: white;
-  border: none;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-}
-
 .save-button:hover {
   background-color: #4338ca;
 }
@@ -505,35 +494,6 @@ input {
 .column-actions {
   display: flex;
   gap: 0.5rem;
-}
-
-.edit-button, .delete-button {
-  background: none;
-  border: none;
-  font-size: 0.875rem;
-  width: 2rem;
-  height: 2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 9999px;
-  cursor: pointer;
-}
-
-.edit-button {
-  color: #4b5563;
-}
-
-.edit-button:hover {
-  background-color: rgba(75, 85, 99, 0.1);
-}
-
-.delete-button {
-  color: #ef4444;
-}
-
-.delete-button:hover {
-  background-color: rgba(239, 68, 68, 0.1);
 }
 
 .delete-confirm {

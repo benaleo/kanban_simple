@@ -1,10 +1,14 @@
 <template>
   <auth-layout>
-    <div class="min-h-screen w-full galaxy-bg p-6 overflow-hidden">
+    <div class="min-h-screen w-full galaxy-bg p-6 overflow-hidden" :style="currentProjectId ? '' : 'position: fixed'">
     <!-- Loading and error messages -->
     <div v-if="loading" class="fixed inset-0 w-full bg-purple-600/10 text-white p-2 text-center z-50">
-      <div class="w-full min-h-screen flex justify-center items-center">
-        <div class="bg-white rounded-full">
+      <div class="w-full min-h-screen flex flex-col justify-start items-center">
+        <div id="bounce-up">
+          <font-awesome-icon icon="circle-chevron-up" class="mb-4" size="xl" />
+          <div class="mb-40">Please select project above</div>
+        </div>
+        <div class="bg-white rounded-full fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
           <Vue3Lottie :animationData="LoadingJSON" :height="400" :width="400" />
         </div>
       </div>
@@ -12,7 +16,7 @@
     <div v-if="error" class="fixed top-0 left-0 w-full bg-red-600 text-white p-2 text-center z-50">
       {{ error }}
     </div>
-    <div class="container flex flex-col gap-4">
+    <div v-if="currentProjectId" class="container flex flex-col gap-4">
       <!-- Task Creation Form -->
       <div class="flex flex-col gap-2 bg-white/10 backdrop-blur-md rounded-xl p-6 mb-8 shadow-xl border border-white/20">
         <h2 class="text-2xl font-semibold text-white">Create New Task</h2>
@@ -646,7 +650,22 @@ const updateTask = async () => {
 }
 </script>
 
-<style>
+<style scoped>
+#bounce-up {
+  animation: bounce 1.5s infinite;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0.8,0,1,1);
+  }
+  50% {
+    transform: translateY(-30px);
+    animation-timing-function: cubic-bezier(0,0,0.2,1);
+  }
+}
+
 .galaxy-bg {
   background: linear-gradient(125deg, #000000, #0f0c29, #24243e, #302b63, #0f0c29, #000000);
   background-size: 400% 400%;

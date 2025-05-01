@@ -6,6 +6,10 @@
     @apply mx-auto
 }
 
+.btn {
+    @apply px-4 py-2 rounded-md
+}
+
 .edit-button {
     @apply bg-blue-400 hover:bg-blue-500 transition-colors duration-200
 }

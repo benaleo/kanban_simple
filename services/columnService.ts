@@ -12,6 +12,7 @@ export interface Column {
 
 // Table name in Supabase
 const COLUMNS_TABLE = 'task_columns';
+const TASKS_TABLE = 'tasks';
 
 /**
  * Fetch all columns for a specific project
@@ -126,17 +127,6 @@ export const updateColumn = async (
  * Delete a column
  */
 export const deleteColumn = async (columnId: string): Promise<void> => {
-  // First update all tasks that use this column to use another column or mark them as "unassigned"
-  const { error: taskUpdateError } = await supabase
-    .from('tasks')
-    .update({ status: 'unassigned' })
-    .eq('status', columnId);
-
-  if (taskUpdateError) {
-    console.error('Error updating tasks for deleted column:', taskUpdateError);
-    throw taskUpdateError;
-  }
-
   // Then delete the column
   const { error } = await supabase
     .from(COLUMNS_TABLE)
