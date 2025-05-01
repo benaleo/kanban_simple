@@ -269,7 +269,7 @@ const currentProjectId = computed(() => route.query.id as string || '')
 const newTask = ref<NewTask>({
   title: '',
   description: '',
-  status: 'todo',
+  status: '',
   project_id: currentProjectId.value
 })
 
@@ -348,6 +348,10 @@ const addTask = async () => {
   try {
     if (!newTask.value.title) {
       error.value = 'Task title is required'
+      toast.error('Error', {
+        description: 'Task title is required',
+        duration: 3000
+      })
       return
     }
     
@@ -355,6 +359,16 @@ const addTask = async () => {
       error.value = 'Please select a project first'
       toast.error('Error', {
         description: 'Please select a project first',
+        duration: 3000
+      })
+      return
+    }
+    console.log("status value", newTask.value.status)
+
+    if (!newTask.value.status) {
+      error.value = 'Please select a column'
+      toast.error('Error', {
+        description: 'Please select a column',
         duration: 3000
       })
       return
