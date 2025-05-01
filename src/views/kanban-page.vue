@@ -162,6 +162,9 @@ import type { Task as SupabaseTask } from '../../services/kanbanService'
 import { createTask, deleteTask, getTasks, updateTaskStatus, updateTask as updateTaskService } from '../../services/kanbanService'
 import moment from 'moment-timezone'
 
+document.title = "Beno Kanban"
+
+
 // Define types
 interface Column {
   id: string
