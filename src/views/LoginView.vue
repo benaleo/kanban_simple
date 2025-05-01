@@ -41,13 +41,15 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { loginUser } from '../../services/authService';
+import { getCurrentUser, getUserProfile, loginUser } from '../../services/authService';
+import { toast } from 'vue-sonner';
 
 const router = useRouter();
 const email = ref('');
 const password = ref('');
 const errorMessage = ref('');
 const isLoading = ref(false);
+const name = ref('');
 
 const handleLogin = async () => {
   try {
@@ -56,8 +58,24 @@ const handleLogin = async () => {
     
     await loginUser(email.value, password.value);
     router.push('/');
+
+    const user = await getCurrentUser();
+    if (!user) {
+      throw new Error('User not found');
+    }
+    name.value = (await getUserProfile(user.id)).username;
+
+    toast.success("Login successful", {
+      duration: 5000,
+      description: "Welcome back! " + name.value
+    });
+
   } catch (error: any) {
     errorMessage.value = error.message || 'Failed to login. Please try again.';
+    toast.error("Failed Login", {
+      duration: 5000,
+      description: "Failed to login. Please try again."
+    });
   } finally {
     isLoading.value = false;
   }

@@ -216,7 +216,8 @@ const editingTask = ref<EditingTask>({
   start_task_date: '',
   start_task_time: '',
   end_task_date: '',
-  end_task_time: ''
+  end_task_time: '',
+  project_id: ''
 })
 
 // Define columns
@@ -318,6 +319,7 @@ const addTask = async () => {
       project_id: currentProjectId.value
     }
 
+    // Show success toast
     toast.success('Success', {
       description: 'Task created successfully',
       duration: 3000
@@ -345,6 +347,12 @@ const removeTask = async (taskId: string) => {
 
     // Remove from local state
     tasks.value = tasks.value.filter((t) => t.id !== taskId)
+
+    // Show success toast
+    toast.success('Success', {
+      description: 'Task deleted successfully',
+      duration: 3000
+    })
   } catch (err) {
     console.error('Error deleting task:', err)
     error.value = 'Failed to delete task. Please try again.'
@@ -354,10 +362,6 @@ const removeTask = async (taskId: string) => {
     })
   } finally {
     loading.value = false
-    toast.success('Success', {
-      description: 'Task deleted successfully',
-      duration: 3000
-    })
   }
 }
 
@@ -522,6 +526,12 @@ const updateTask = async () => {
 
     // Close modal
     closeEditModal()
+
+    // Show success toast
+    toast.success('Success', {
+      description: 'Task updated successfully',
+      duration: 3000
+    })
   } catch (err) {
     console.error('Error updating task:', err)
     error.value = 'Failed to update task. Please try again.'
@@ -531,10 +541,6 @@ const updateTask = async () => {
     })
   } finally {
     loading.value = false
-    toast.success('Success', {
-      description: 'Task updated successfully',
-      duration: 3000
-    })
   }
 }
 </script>

@@ -64,6 +64,7 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { registerUser } from '../../services/authService';
+import { toast } from 'vue-sonner';
 
 const router = useRouter();
 const username = ref('');
@@ -92,8 +93,20 @@ const handleRegister = async () => {
     isLoading.value = true;
     await registerUser(email.value, password.value, username.value);
     router.push('/');
+
+    // Show success toast
+    toast.success('Success', {
+      description: 'Account created successfully',
+      duration: 3000
+    })
   } catch (error: any) {
     errorMessage.value = error.message || 'Failed to register. Please try again.';
+
+    // Show error toast
+    toast.error('Error', {
+      description: 'Failed to register. Please try again.',
+      duration: 3000
+    })
   } finally {
     isLoading.value = false;
   }
