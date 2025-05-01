@@ -40,7 +40,7 @@ Create a `.env` file in your project root with the following variables:
 
 ```env
 VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_SUPABASE_KEY=your_supabase_key
 ```
 
 Set up your Supabase project [here](https://supabase.io).
@@ -89,30 +89,45 @@ Refer to the [Vite Configuration Reference](https://vitejs.dev/config/) for adva
 
 ### 🔐 Login Screen  
 > Secure login for returning users.
+![Login Screen](./public/01.png)
+
 
 ### 📝 Register Screen  
 > Quick sign-up to get started.
+![Register Screen](./public/02.png)
 
 ### 🏠 Home Page  
 > Your main workspace overview.
+![Home Page](./public/04.png)
 
 ### 📭 Empty State  
 > Prompt to select or create a project.
+![Empty State](./public/03.png)
 
 ### 🗂️ Project Management  
 > Create, rename, or delete projects.
+![Add Project](./public/05.png)
+![List Project](./public/06.png)
+![Delete Project](./public/07.png)
+
 
 ### ➕ Add Task  
 > Add a new task to a selected column.
+![Add Task](./public/08.png)
+![List Task](./public/09.png)
 
 ### ✏️ Edit Task  
 > Modify details of an existing task.
-
-### ❌ Delete Task  
-> Permanently remove a task.
+![Edit Task](./public/11.png)
 
 ### 🧱 Column Management  
 > Manage project columns (e.g., To Do, In Progress, Done).
+![List Column](./public/12.png)
 
 ### 👤 Edit Profile  
 > Update your user profile and settings.
+![Popup Setting Profile](./public/13.png)
+![Edit Profile](./public/14.png)
+![Edit Profile](./public/15.png)
+
+
