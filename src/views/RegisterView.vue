@@ -1,61 +1,43 @@
 <template>
-  <div class="register-container">
-    <div class="register-card">
-      <h1 class="title">Create an Account</h1>
-      <form @submit.prevent="handleRegister" class="register-form">
-        <div class="form-group">
-          <label for="username">Username</label>
-          <input
-            type="text"
-            id="username"
-            v-model="username"
-            required
-            placeholder="Enter a username"
-            class="form-input"
-          />
+  <div class="w-full h-screen overflow-hidden bg-auth">
+    <div class="w-full h-screen bg-black/40">
+      <div class="register-container">
+        <div class="glass-card">
+          <h1 class="title">Create an Account</h1>
+          <form @submit.prevent="handleRegister" class="register-form">
+            <div class="form-group">
+              <label for="username">Username</label>
+              <input type="text" id="username" v-model="username" required placeholder="Enter a username"
+                class="form-input" />
+            </div>
+            <div class="form-group">
+              <label for="email">Email</label>
+              <input type="email" id="email" v-model="email" required placeholder="Enter your email"
+                class="form-input" />
+            </div>
+            <div class="form-group">
+              <label for="password">Password</label>
+              <input type="password" id="password" v-model="password" required placeholder="Enter a password"
+                class="form-input" />
+            </div>
+            <div class="form-group">
+              <label for="confirmPassword">Confirm Password</label>
+              <input type="password" id="confirmPassword" v-model="confirmPassword" required
+                placeholder="Confirm your password" class="form-input" />
+            </div>
+            <div class="error-message" v-if="errorMessage">{{ errorMessage }}</div>
+            <button type="submit" class="submit-btn" :disabled="isLoading">
+              {{ isLoading ? 'Creating account...' : 'Register' }}
+            </button> 
+            <div class="auth-link">
+              Already have an account?
+              <router-link to="/login">
+                <span class="underline">Login here</span>
+              </router-link>
+            </div>
+          </form>
         </div>
-        <div class="form-group">
-          <label for="email">Email</label>
-          <input
-            type="email"
-            id="email"
-            v-model="email"
-            required
-            placeholder="Enter your email"
-            class="form-input"
-          />
-        </div>
-        <div class="form-group">
-          <label for="password">Password</label>
-          <input
-            type="password"
-            id="password"
-            v-model="password"
-            required
-            placeholder="Enter a password"
-            class="form-input"
-          />
-        </div>
-        <div class="form-group">
-          <label for="confirmPassword">Confirm Password</label>
-          <input
-            type="password"
-            id="confirmPassword"
-            v-model="confirmPassword"
-            required
-            placeholder="Confirm your password"
-            class="form-input"
-          />
-        </div>
-        <div class="error-message" v-if="errorMessage">{{ errorMessage }}</div>
-        <button type="submit" class="submit-btn" :disabled="isLoading">
-          {{ isLoading ? 'Creating account...' : 'Register' }}
-        </button>
-        <div class="login-link">
-          Already have an account?
-          <router-link to="/login">Login here</router-link>
-        </div>
-      </form>
+      </div>
     </div>
   </div>
 </template>
@@ -77,13 +59,13 @@ const isLoading = ref(false);
 const handleRegister = async () => {
   try {
     errorMessage.value = '';
-    
+
     // Validate passwords match
     if (password.value !== confirmPassword.value) {
       errorMessage.value = 'Passwords do not match';
       return;
     }
-    
+
     // Validate password length
     if (password.value.length < 6) {
       errorMessage.value = 'Password must be at least 6 characters';
@@ -119,23 +101,6 @@ const handleRegister = async () => {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background-color: #f5f5f5;
-}
-
-.register-card {
-  width: 100%;
-  max-width: 400px;
-  padding: 2rem;
-  background-color: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.title {
-  text-align: center;
-  margin-bottom: 1.5rem;
-  color: #333;
-  font-size: 1.75rem;
 }
 
 .register-form {
@@ -175,12 +140,6 @@ const handleRegister = async () => {
 .submit-btn:disabled {
   background-color: #a5a5a5;
   cursor: not-allowed;
-}
-
-.login-link {
-  text-align: center;
-  margin-top: 1rem;
-  font-size: 0.9rem;
 }
 
 .login-link a {

@@ -1,6 +1,8 @@
 <template>
-  <div class="login-container">
-    <div class="login-card">
+<div class="w-full h-screen overflow-hidden bg-auth">
+  <div class="w-full h-screen bg-black/40">
+    <div class="login-container">
+    <div class="glass-card">
       <h1 class="title">Login to Kanban</h1>
       <form @submit.prevent="handleLogin" class="login-form">
         <div class="form-group">
@@ -29,13 +31,17 @@
         <button type="submit" class="submit-btn" :disabled="isLoading">
           {{ isLoading ? 'Logging in...' : 'Login' }}
         </button>
-        <div class="register-link">
+        <div class="auth-link">
           Don't have an account?
-          <router-link to="/register">Register here</router-link>
+          <router-link to="/register">
+            <span class="underline">Register here</span>
+          </router-link>
         </div>
       </form>
     </div>
   </div>
+  </div>
+</div>
 </template>
 
 <script setup lang="ts">
@@ -87,23 +93,6 @@ const handleLogin = async () => {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background-color: #f5f5f5;
-}
-
-.login-card {
-  width: 100%;
-  max-width: 400px;
-  padding: 2rem;
-  background-color: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.title {
-  text-align: center;
-  margin-bottom: 1.5rem;
-  color: #333;
-  font-size: 1.75rem;
 }
 
 .login-form {
@@ -116,13 +105,6 @@ const handleLogin = async () => {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-}
-
-.form-input {
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 0.25rem;
-  font-size: 1rem;
 }
 
 .submit-btn {

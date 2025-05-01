@@ -17,3 +17,39 @@
 .edit-button, .delete-button {
     @apply bg-none border-none text-sm w-8 h-8 flex items-center justify-center rounded-full cursor-pointer;
 }
+
+.bg-auth {
+    background-image: url('/src/assets/html/bg-auth.jpeg');
+    background-size: cover;
+    background-position: center;
+}
+
+.title {
+    @apply text-center mb-6 text-white text-2xl font-bold
+}
+
+.form-group label{
+    @apply block mb-2 text-white text-sm font-medium
+}
+
+.form-group input {
+    @apply placeholder:text-slate-400
+}
+
+.form-input {
+    @apply placeholder:text-slate-400 px-2 py-2 rounded-md focus:bg-transparent text-white bg-transparent border border-white
+}
+
+.auth-link {
+    @apply text-white text-sm text-center mt-0.5
+}
+
+.glass-card {
+    width: 100%;
+    max-width: 400px;
+    padding: 2rem;
+    border-radius: 0.5rem;
+    backdrop-filter: blur(5px);
+    background-color: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
