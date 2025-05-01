@@ -1,39 +1,118 @@
-# kasirpinter_vue
+# 🌌 **kanban_simple**
 
-This template should help get you started developing with Vue 3 in Vite.
+A **simple and sleek Kanban board application** built with **Vue 3** and **Vite**, featuring a **responsive Galaxy-themed UI**.  
+Powered by **Supabase** for authentication, database, and backend functionality.
 
-## Recommended IDE Setup
+---
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+## ✨ Features
 
-## Type Support for `.vue` Imports in TS
+- 📝 Task creation, editing, and deletion  
+- 📁 Project and column management  
+- 🔐 User authentication (register/login)  
+- 👤 Profile editing  
+- 🌌 Beautiful **Galaxy theme** for a modern aesthetic  
+- ✅ **Backend powered by Supabase**:  
+  - User authentication  
+  - Real-time project/task data  
+  - Storage
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
+---
 
-## Customize configuration
+## 🚀 Installation Guide
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+```bash
+# 1. Clone the repository
+git clone https://github.com/your-username/kanban_simple.git
 
-## Project Setup
+# 2. Navigate into the project directory
+cd kanban_simple
 
-```sh
+# 3. Install dependencies
 pnpm install
 ```
 
-### Compile and Hot-Reload for Development
+---
 
-```sh
+## 🔧 Supabase Setup
+
+Create a `.env` file in your project root with the following variables:
+
+```env
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+Set up your Supabase project [here](https://supabase.io).
+
+---
+
+## 🛠️ Recommended IDE Setup
+
+- **Visual Studio Code**  
+- **Volar extension**  
+  - ⚠️ *Ensure you disable Vetur for best performance*
+
+---
+
+## ⚙️ Project Commands
+
+```bash
+# Compile and Hot-Reload for Development
 pnpm dev
-```
 
-### Type-Check, Compile and Minify for Production
-
-```sh
+# Type-Check, Compile and Minify for Production
 pnpm build
-```
 
-### Lint with [ESLint](https://eslint.org/)
-
-```sh
+# Lint with ESLint
 pnpm lint
 ```
+
+---
+
+## 🧠 Type Support for `.vue` Files
+
+TypeScript does not natively support `.vue` files.  
+Use `vue-tsc` for type-checking and **Volar** in your editor for full language support.
+
+---
+
+## 🔧 Customize Configuration
+
+Refer to the [Vite Configuration Reference](https://vitejs.dev/config/) for advanced settings.
+
+---
+
+## 📸 App Walkthrough (with Screenshots)
+
+📂 _Upload screenshots in this section to display UI previews._
+
+### 🔐 Login Screen  
+> Secure login for returning users.
+
+### 📝 Register Screen  
+> Quick sign-up to get started.
+
+### 🏠 Home Page  
+> Your main workspace overview.
+
+### 📭 Empty State  
+> Prompt to select or create a project.
+
+### 🗂️ Project Management  
+> Create, rename, or delete projects.
+
+### ➕ Add Task  
+> Add a new task to a selected column.
+
+### ✏️ Edit Task  
+> Modify details of an existing task.
+
+### ❌ Delete Task  
+> Permanently remove a task.
+
+### 🧱 Column Management  
+> Manage project columns (e.g., To Do, In Progress, Done).
+
+### 👤 Edit Profile  
+> Update your user profile and settings.
