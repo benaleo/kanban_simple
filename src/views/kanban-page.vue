@@ -73,7 +73,7 @@
                   <h4 class="text-white font-medium text-lg">{{ task.title }}</h4>
                   <span class="text-xs text-white/70">{{ formatDate(task.created_at) }}</span>
                 </div>
-                <p class="text-white/90 text-sm mb-2">{{ task.description }}</p>
+                <p class="text-white/90 text-sm mb-2 line-clamp-2">{{ task.description }}</p>
                 <div class="flex justify-end mt-2">
                   <button @click.stop="removeTask(task.id)"
                     class="text-xs bg-red-500 hover:bg-red-600 text-white py-1 px-2 rounded transition-colors duration-200">
