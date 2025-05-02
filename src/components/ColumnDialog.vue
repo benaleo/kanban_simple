@@ -1,11 +1,11 @@
 <template>
-  <div class="dialog-overlay" @click.self="$emit('close')">
+  <div class="dialog-overlay text-black" @click.self="$emit('close')">
     <div class="dialog-content">
       <div class="dialog-header">
         <h2 class="dialog-title">{{ isEditMode ? 'Edit Column' : 'Manage Columns' }}</h2>
         <button class="close-button" @click="$emit('close')">&times;</button>
       </div>
-      
+
       <div class="dialog-body">
         <!-- Column List -->
         <div v-if="!isEditMode && !isAddMode" class="column-list">
@@ -15,21 +15,24 @@
               <i class="fas fa-plus"></i> New Column
             </button>
           </div>
-          
+
           <div v-if="loading" class="loading-indicator">Loading columns...</div>
           <div v-else-if="errorMessage" class="error-message">{{ errorMessage }}</div>
           <div v-else-if="columns.length === 0" class="empty-state">
             <p>No columns found. Create your first column to organize tasks.</p>
           </div>
-          
+
           <div v-else class="columns-grid">
             <div class="column-list-instructions">
               <p>Drag and drop columns to change their order</p>
             </div>
-            <div v-for="(column, index) in columns" :key="column.id" class="column-card" draggable="true" @dragstart="startDrag($event, index)" @dragover.prevent @dragenter.prevent="onDragEnter($event, index)" @dragleave.prevent="onDragLeave($event)" @drop.prevent="onDrop($event, index)" :class="{ 'drag-over': dragOverIndex === index }">
+            <div v-for="(column, index) in columns" :key="column.id" class="column-card" draggable="true"
+              @dragstart="startDrag($event, index)" @dragover.prevent @dragenter.prevent="onDragEnter($event, index)"
+              @dragleave.prevent="onDragLeave($event)" @drop.prevent="onDrop($event, index)"
+              :class="{ 'drag-over': dragOverIndex === index }">
               <div class="column-card-content">
                 <h4 class="column-name">{{ column.name }}</h4>
-                
+
                 <div class="column-actions">
                   <button @click="editColumn(column)" class="edit-button" title="Edit column">
                     <font-awesome-icon icon="edit" style="color: white" />
@@ -42,22 +45,15 @@
             </div>
           </div>
         </div>
-        
+
         <!-- Add/Edit Column Form -->
         <form v-if="isEditMode || isAddMode" @submit.prevent="saveColumn" class="column-form">
           <div class="form-group">
             <label for="columnName">Column Name</label>
-            <input 
-              type="text" 
-              id="columnName" 
-              v-model="columnForm.name" 
-              required
-              class="form-input"
-              placeholder="Enter column name"
-              autofocus
-            />
+            <input type="text" id="columnName" v-model="columnForm.name" required class="form-input"
+              placeholder="Enter column name" autofocus />
           </div>
-          
+
           <div class="dialog-actions">
             <button type="button" class="cancel-button" @click="cancelEdit">Cancel</button>
             <button type="submit" class="save-button" :disabled="isSubmitting">
@@ -65,15 +61,18 @@
             </button>
           </div>
         </form>
-        
+
         <!-- Confirm Delete Modal -->
         <div v-if="showDeleteConfirm" class="delete-confirm">
           <p>Are you sure you want to delete <strong>{{ columnToDelete?.name }}</strong>?</p>
           <p class="warning">This will move all tasks in this column to 'unassigned' status and cannot be undone.</p>
-          
+
           <div class="dialog-actions">
-            <button @click="cancelDelete" class="btn bg-slate-200 hover:bg-slate-400 transition-all duration-300 whitespace-nowrap">Cancel</button>
-            <button @click="deleteColumn" class="btn text-white bg-red-400 hover:bg-red-500 transition-all duration-300 whitespace-nowrap" :disabled="isSubmitting">
+            <button @click="cancelDelete"
+              class="btn bg-slate-200 hover:bg-slate-400 transition-all duration-300 whitespace-nowrap">Cancel</button>
+            <button @click="deleteColumn"
+              class="btn text-white bg-red-400 hover:bg-red-500 transition-all duration-300 whitespace-nowrap"
+              :disabled="isSubmitting">
               {{ isSubmitting ? 'Deleting...' : 'Delete Column' }}
             </button>
           </div>
@@ -151,32 +150,32 @@ const onDrop = async (event: DragEvent, dropIndex: number) => {
   const sourceIndex = dragSourceIndex.value;
   dragOverIndex.value = null; // Clear drag over highlight
   dragSourceIndex.value = null;
-  
+
   if (sourceIndex === null || sourceIndex === dropIndex) return;
-  
+
   try {
     // Make a copy of the columns array
     const newColumns = [...columns.value];
-    
+
     // Remove the item from its original position
     const [movedColumn] = newColumns.splice(sourceIndex, 1);
-    
+
     // Insert it at the new position
     newColumns.splice(dropIndex, 0, movedColumn);
-    
+
     // Update all affected columns with new order values
     // First update the local state
     columns.value = newColumns.map((col, idx) => ({
       ...col,
       order: idx
     }));
-    
+
     // Then update the backend
     loading.value = true;
     const updatePromises = columns.value.map(column => {
       return updateColumn(column.id, { order: column.order });
     });
-    
+
     await Promise.all(updatePromises);
     emit('update'); // Notify parent that columns have been updated
   } catch (error: any) {
@@ -226,13 +225,13 @@ async function saveColumn() {
   try {
     isSubmitting.value = true;
     errorMessage.value = '';
-    
+
     if (isEditMode.value) {
       // Update existing column
       const updatedColumn = await updateColumn(columnForm.value.id, {
         name: columnForm.value.name
       });
-      
+
       // Update column in local array
       const index = columns.value.findIndex(p => p.id === updatedColumn.id);
       if (index !== -1) {
@@ -243,15 +242,15 @@ async function saveColumn() {
       const newColumn = await createColumn(props.projectId, {
         name: columnForm.value.name
       });
-      
+
       // Add to local array
       columns.value.push(newColumn);
     }
-    
+
     // Reset form state
     isEditMode.value = false;
     isAddMode.value = false;
-    
+
     // Emit update event
     emit('update', columns.value);
 
@@ -283,20 +282,20 @@ function cancelDelete() {
 
 async function deleteColumn() {
   if (!columnToDelete.value) return;
-  
+
   try {
     isSubmitting.value = true;
     errorMessage.value = '';
-    
+
     await deleteColumnService(columnToDelete.value.id);
-    
+
     // Remove from local array
     columns.value = columns.value.filter(c => c.id !== columnToDelete.value?.id);
-    
+
     // Reset state
     showDeleteConfirm.value = false;
     columnToDelete.value = null;
-    
+
     // Emit update event
     emit('update', columns.value);
 
@@ -318,7 +317,6 @@ async function deleteColumn() {
 </script>
 
 <style scoped>
-
 input {
   color: #111827;
 }
@@ -425,7 +423,8 @@ input {
   background-color: #4338ca;
 }
 
-.save-button:disabled, .delete-button:disabled {
+.save-button:disabled,
+.delete-button:disabled {
   background-color: #a5a5a5;
   cursor: not-allowed;
 }
@@ -540,7 +539,8 @@ input {
   padding: 2rem 0;
 }
 
-.loading-indicator, .error-message {
+.loading-indicator,
+.error-message {
   padding: 1rem;
   text-align: center;
 }

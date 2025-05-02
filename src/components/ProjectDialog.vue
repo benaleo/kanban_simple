@@ -1,11 +1,11 @@
 <template>
-  <div class="dialog-overlay" @click.self="$emit('close')">
+  <div class="dialog-overlay text-black" @click.self="$emit('close')">
     <div class="dialog-content">
       <div class="dialog-header">
         <h2 class="dialog-title">{{ isEditMode ? 'Edit Project' : 'Select Project' }}</h2>
         <button class="close-button" @click="$emit('close')">&times;</button>
       </div>
-      
+
       <div class="dialog-body">
         <!-- Project List -->
         <div v-if="!isEditMode && !isAddMode" class="project-list">
@@ -15,20 +15,19 @@
               <i class="fas fa-plus"></i> New Project
             </button>
           </div>
-          
+
           <div v-if="loading" class="loading-indicator">Loading projects...</div>
           <div v-else-if="errorMessage" class="error-message">{{ errorMessage }}</div>
           <div v-else-if="projects.length === 0" class="empty-state">
             <p>You don't have any projects yet. Create your first project to get started.</p>
           </div>
-          
+
           <div v-else class="projects-grid">
-            <div v-for="project in projects" :key="project.id" class="project-card" 
-                 :class="{'selected': selectedProjectId === project.id}"
-                 @click="selectProject(project)">
+            <div v-for="project in projects" :key="project.id" class="project-card"
+              :class="{ 'selected': selectedProjectId === project.id }" @click="selectProject(project)">
               <div class="project-card-content">
                 <h4 class="project-name">{{ project.name }}</h4>
-                
+
                 <div class="project-actions">
                   <button @click.stop="editProject(project)" class="edit-button" title="Edit project">
                     <font-awesome-icon icon="edit" style="color: white" />
@@ -41,22 +40,15 @@
             </div>
           </div>
         </div>
-        
+
         <!-- Add/Edit Project Form -->
         <form v-if="isEditMode || isAddMode" @submit.prevent="saveProject" class="project-form">
           <div class="form-group">
             <label for="projectName">Project Name</label>
-            <input 
-              type="text" 
-              id="projectName" 
-              v-model="projectForm.name" 
-              required
-              class="form-input"
-              placeholder="Enter project name"
-              autofocus
-            />
+            <input type="text" id="projectName" v-model="projectForm.name" required class="form-input"
+              placeholder="Enter project name" autofocus />
           </div>
-          
+
           <div class="dialog-actions">
             <button type="button" class="cancel-button" @click="cancelEdit">Cancel</button>
             <button type="submit" class="save-button" :disabled="isSubmitting">
@@ -64,26 +56,26 @@
             </button>
           </div>
         </form>
-        
+
         <!-- Confirm Delete Modal -->
         <div v-if="showDeleteConfirm" class="delete-confirm">
           <p>Are you sure you want to delete <strong>{{ projectToDelete?.name }}</strong>?</p>
           <p class="warning">This will delete all tasks associated with this project and cannot be undone.</p>
-          
+
           <div class="dialog-actions">
-            <button @click="cancelDelete" class="btn bg-slate-200 hover:bg-slate-400 transition-all duration-300 whitespace-nowrap">Cancel</button>
-            <button @click="deleteProject" class="btn text-white bg-red-400 hover:bg-red-500 transition-all duration-300 whitespace-nowrap" :disabled="isSubmitting">
+            <button @click="cancelDelete"
+              class="btn bg-slate-200 hover:bg-slate-400 transition-all duration-300 whitespace-nowrap">Cancel</button>
+            <button @click="deleteProject"
+              class="btn text-white bg-red-400 hover:bg-red-500 transition-all duration-300 whitespace-nowrap"
+              :disabled="isSubmitting">
               {{ isSubmitting ? 'Deleting...' : 'Delete Project' }}
             </button>
           </div>
         </div>
-        
+
         <!-- Selection Actions -->
         <div v-if="!isEditMode && !isAddMode && !showDeleteConfirm" class="selection-actions">
-          <button 
-            v-if="selectedProjectId" 
-            class="primary-button" 
-            @click="$emit('select', selectedProject)">
+          <button v-if="selectedProjectId" class="primary-button" @click="$emit('select', selectedProject)">
             Open Selected Project
           </button>
         </div>
@@ -128,7 +120,7 @@ const selectedProject = computed(() => {
 // Lifecycle hooks
 onMounted(async () => {
   await loadProjects();
-  
+
   // Set initial selected project from URL query param if present
   const projectId = route.query.id as string;
   if (projectId) {
@@ -183,13 +175,13 @@ async function saveProject() {
   try {
     isSubmitting.value = true;
     errorMessage.value = '';
-    
+
     if (isEditMode.value) {
       // Update existing project
       const updatedProject = await updateProject(projectForm.value.id, {
         name: projectForm.value.name
       });
-      
+
       // Update project in local array
       const index = projects.value.findIndex(p => p.id === updatedProject.id);
       if (index !== -1) {
@@ -200,12 +192,12 @@ async function saveProject() {
       const newProject = await createProject({
         name: projectForm.value.name
       });
-      
+
       // Add to local array
       projects.value.push(newProject);
       selectedProjectId.value = newProject.id;
     }
-    
+
     // Reset form state
     isEditMode.value = false;
     isAddMode.value = false;
@@ -238,21 +230,21 @@ function cancelDelete() {
 
 async function deleteProject() {
   if (!projectToDelete.value) return;
-  
+
   try {
     isSubmitting.value = true;
     errorMessage.value = '';
-    
+
     await deleteProjectService(projectToDelete.value.id);
-    
+
     // Remove from local array
     projects.value = projects.value.filter(p => p.id !== projectToDelete.value?.id);
-    
+
     // Reset selected project if needed
     if (selectedProjectId.value === projectToDelete.value.id) {
       selectedProjectId.value = projects.value.length > 0 ? projects.value[0].id : '';
     }
-    
+
     // Reset state
     showDeleteConfirm.value = false;
     projectToDelete.value = null;
@@ -275,7 +267,6 @@ async function deleteProject() {
 </script>
 
 <style scoped>
-
 input {
   color: #111827;
 }
@@ -367,7 +358,8 @@ input {
   cursor: pointer;
 }
 
-.save-button, .primary-button {
+.save-button,
+.primary-button {
   padding: 0.625rem 1rem;
   background-color: #4f46e5;
   color: white;
@@ -378,11 +370,13 @@ input {
   cursor: pointer;
 }
 
-.save-button:hover, .primary-button:hover {
+.save-button:hover,
+.primary-button:hover {
   background-color: #4338ca;
 }
 
-.save-button:disabled, .delete-button:disabled {
+.save-button:disabled,
+.delete-button:disabled {
   background-color: #a5a5a5;
   cursor: not-allowed;
 }
@@ -483,7 +477,8 @@ input {
   padding: 2rem 0;
 }
 
-.loading-indicator, .error-message {
+.loading-indicator,
+.error-message {
   padding: 1rem;
   text-align: center;
 }

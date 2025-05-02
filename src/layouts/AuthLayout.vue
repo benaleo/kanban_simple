@@ -1,5 +1,5 @@
 <template>
-  <div class="layout-container">
+  <div class="layout-container text-black">
     <header class="navbar">
       <div class="navbar-brand" v-if="!isMobile">
         <router-link to="/" class="logo">Kanban Board</router-link>
@@ -22,7 +22,7 @@
           </div>
           <span class="username">{{ userProfile.username }}</span>
         </div>
-        
+
         <div class="dropdown" v-if="showDropdown">
           <div class="dropdown-item" @click="openProfileDialog">
             <i class="fas fa-user"></i> Edit Profile
@@ -33,25 +33,17 @@
         </div>
       </div>
     </header>
-    
+
     <main>
       <slot></slot>
     </main>
-    
+
     <!-- Profile Edit Dialog -->
-    <ProfileDialog
-      v-if="showProfileDialog" 
-      :user="userProfile"
-      @close="showProfileDialog = false"
-      @update="handleProfileUpdate"
-    />
+    <ProfileDialog v-if="showProfileDialog" :user="userProfile" @close="showProfileDialog = false"
+      @update="handleProfileUpdate" />
 
     <!-- Project Selection Dialog -->
-    <ProjectDialog
-      v-if="showProjectDialog"
-      @close="showProjectDialog = false"
-      @select="handleProjectSelect"
-    />
+    <ProjectDialog v-if="showProjectDialog" @close="showProjectDialog = false" @select="handleProjectSelect" />
   </div>
 </template>
 
@@ -80,14 +72,14 @@ onMounted(async () => {
     if (user) {
       currentUser.value = user;
       userProfile.value = await getUserProfile(user.id);
-      
+
       // Load current project if ID is in URL
       await loadCurrentProject();
     }
   } catch (error) {
     console.error('Error loading user data:', error);
   }
-  
+
   // Add click outside listener
   document.addEventListener('click', handleClickOutside);
 });
