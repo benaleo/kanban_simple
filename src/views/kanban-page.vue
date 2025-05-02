@@ -13,8 +13,8 @@
           </div>
         </div>
       </div>
-      <div v-if="error" class="fixed top-0 left-0 w-full bg-red-600 text-white p-2 text-center z-50">
-        {{ error }}
+      <div v-if="errorMessage" class="fixed top-0 left-0 w-full bg-red-600 text-white p-2 text-center z-50">
+        {{ errorMessage }}
       </div>
       <div v-if="currentProjectId" class="container flex flex-col gap-4">
         <!-- Task Creation Form -->
@@ -159,16 +159,46 @@
             </div>
           </div>
 
-        </div>
-        <div class="flex justify-end gap-2 mt-6">
-          <button @click="closeEditModal"
-            class="bg-white/20 hover:bg-white/30 text-white font-medium py-2 px-4 rounded-lg transition-colors">
-            Cancel
-          </button>
-          <button @click="updateTask"
-            class="bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-bold py-2 px-4 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl">
-            Save Changes
-          </button>
+          <!-- Assigned Users -->
+          <div>
+            <label class="block text-white text-sm font-medium mb-1">Assign Users</label>
+            <div class="mb-2 flex flex-col gap-2">
+              <select v-model="selectedUserId"
+                class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
+                <option value="" disabled>Select a user</option>
+                <option v-for="user in availableUsers" :key="user.id" :value="user.id">{{ user.email }}</option>
+              </select>
+              <button @click="addUserToTask"
+                class="self-end bg-white/20 hover:bg-white/30 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+                Add User
+              </button>
+            </div>
+
+            <!-- Display Assigned Users -->
+            <div v-if="editingTask.assignedUsers.length > 0" class="mt-2 flex flex-wrap gap-2">
+              <div v-for="(user, index) in editingTask.assignedUsers" :key="user.id"
+                class="flex items-center bg-white/20 rounded-lg px-3 py-1 text-white text-sm">
+                <span>{{ user.email }}</span>
+                <button @click="removeUserFromTask(index)" class="ml-2 text-red-300 hover:text-red-500">
+                  &times;
+                </button>
+              </div>
+            </div>
+            <div v-else class="text-white/50 text-sm italic mt-2">
+              No users assigned
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-2 mt-6">
+            <button @click="closeEditModal"
+              class="bg-white/20 hover:bg-white/30 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+              Cancel
+            </button>
+            <button @click="updateTask"
+              class="bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-bold py-2 px-4 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl">
+              Save Changes
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -186,8 +216,12 @@ import ColumnDialog from '@/components/ColumnDialog.vue'
 // Import Supabase Kanban service
 import type { Task as SupabaseTask } from '../../services/kanbanService'
 import { createTask, getTasks, updateTask as updateTaskService, deleteTask, updateTaskStatus } from '../../services/kanbanService'
+import { supabase } from '../../utils/supabase'
 
+// Set page title
 document.title = "Beno Kanban"
+
+// UI components
 import { toast } from 'vue-sonner'
 import { Vue3Lottie } from 'vue3-lottie'
 import LoadingJSON from "@/assets/html/loading.json"
@@ -224,15 +258,18 @@ interface EditingTask extends NewTask {
   start_task_time?: string
   end_task_date?: string
   end_task_time?: string
+  assignedUsers: { id: string, email: string }[]
 }
+
+// Global state
+const columns = ref<Column[]>([])
+const tasks = ref<SupabaseTask[]>([])
+const loading = ref(false)
+const errorMessage = ref<string>('')
 
 // Store the currently dragged task
 const draggedTaskId = ref<string | null>(null)
 const sourceColumnId = ref<string | null>(null)
-
-// Loading and error states
-const loading = ref<boolean>(true)
-const error = ref<string | null>(null)
 
 // Edit modal state
 const isEditModalOpen = ref<boolean>(false)
@@ -241,14 +278,122 @@ const editingTask = ref<EditingTask>({
   title: '',
   description: '',
   status: '',
-  start_task: '',
-  end_task: '',
+  project_id: '',
+  // We don't need to set start_task and end_task directly as we'll compute them from the date/time fields
   start_task_date: '',
   start_task_time: '',
   end_task_date: '',
   end_task_time: '',
-  project_id: ''
+  assignedUsers: []
 })
+
+// For user assignment
+const selectedUserId = ref('')
+const projectUsers = ref<{ id: string, email: string }[]>([])
+
+// Computed property for available users (not yet assigned to the task)
+const availableUsers = computed(() => {
+  const assignedUserIds = editingTask.value.assignedUsers.map(user => user.id);
+  return projectUsers.value.filter(user => !assignedUserIds.includes(user.id));
+});
+
+// Add a user to the task
+const addUserToTask = () => {
+  if (!selectedUserId.value) return;
+
+  const user = projectUsers.value.find(u => u.id === selectedUserId.value);
+  if (!user) return;
+
+  // Add to assigned users list if not already assigned
+  if (!editingTask.value.assignedUsers.some(u => u.id === user.id)) {
+    editingTask.value.assignedUsers.push(user);
+  }
+
+  // Reset selection
+  selectedUserId.value = '';
+};
+
+// Remove a user from the task
+const removeUserFromTask = (index: number) => {
+  editingTask.value.assignedUsers.splice(index, 1);
+};
+
+// Load project users
+const loadProjectUsers = async (projectId: string) => {
+  try {
+    // First, get all users associated with this project
+    const { data: projectUserData, error: projectUserError } = await supabase
+      .from('project_has_users')
+      .select('user_id')
+      .eq('project_id', projectId)
+      .is('task_id', null);
+
+    if (projectUserError) {
+      console.error('Error loading project users:', projectUserError);
+      return [];
+    }
+
+    if (!projectUserData || projectUserData.length === 0) {
+      projectUsers.value = [];
+      return [];
+    }
+
+    // Get user details from user_emails
+    const userIds = projectUserData.map((pu: { user_id: string }) => pu.user_id);
+    const { data: userData, error: userError } = await supabase
+      .from('user_emails')
+      .select('id, email')
+      .in('id', userIds);
+
+    if (userError) {
+      console.error('Error loading user details:', userError);
+      return [];
+    }
+
+    projectUsers.value = userData || [];
+    return userData || [];
+  } catch (err) {
+    console.error('Error in loadProjectUsers:', err);
+    return [];
+  }
+};
+
+// Load task assigned users
+const loadTaskAssignedUsers = async (taskId: string) => {
+  try {
+    // Get users assigned to this task
+    const { data: taskUserData, error: taskUserError } = await supabase
+      .from('project_has_users')
+      .select('user_id')
+      .eq('task_id', taskId);
+
+    if (taskUserError) {
+      console.error('Error loading task users:', taskUserError);
+      return [];
+    }
+
+    if (!taskUserData || taskUserData.length === 0) {
+      return [];
+    }
+
+    // Get user details
+    const userIds = taskUserData.map((tu: { user_id: string }) => tu.user_id);
+    const { data: userData, error: userError } = await supabase
+      .from('user_emails')
+      .select('id, email')
+      .in('id', userIds);
+
+    if (userError) {
+      console.error('Error loading user details:', userError);
+      return [];
+    }
+
+    return userData || [];
+  } catch (error) {
+    console.error('Error in loadTaskAssignedUsers:', error);
+    return [];
+  }
+};
 
 // Project dialog state
 const showNoProjectDialog = ref(false)
@@ -257,25 +402,19 @@ const showColumnDialog = ref(false)
 // Router for navigation
 const router = useRouter()
 
-// Columns definition
-const columns = ref<Column[]>([])
-
-// Tasks state
-const tasks = ref<SupabaseTask[]>([])
+// New task object
+const newTask = ref<NewTask>({
+  title: '',
+  description: '',
+  status: '',
+  project_id: ''
+})
 
 // Get route for project_id from query params
 const route = useRoute()
 
 // Current project ID from URL query
 const currentProjectId = computed(() => route.query.id as string || '')
-
-// New task object
-const newTask = ref<NewTask>({
-  title: '',
-  description: '',
-  status: '',
-  project_id: currentProjectId.value
-})
 
 // Watch for changes in project ID to update form
 watch(() => currentProjectId.value, (newProjectId) => {
@@ -291,7 +430,7 @@ const tasksInColumn = (columnId: string): SupabaseTask[] => {
 const fetchTasks = async () => {
   try {
     loading.value = true
-    error.value = null
+    errorMessage.value = ''
 
     // Only fetch tasks if a project is selected
     if (currentProjectId.value) {
@@ -301,7 +440,7 @@ const fetchTasks = async () => {
     }
   } catch (err) {
     console.error('Error fetching tasks:', err)
-    error.value = 'Failed to load tasks. Please refresh the page.'
+    errorMessage.value = 'Failed to load tasks. Please try again.'
     toast.error('Error', {
       description: 'Failed to load tasks',
       duration: 3000
@@ -337,7 +476,7 @@ const loadColumns = async () => {
     }
   } catch (err) {
     console.error('Error loading columns:', err)
-    error.value = 'Failed to load columns. Please refresh the page.'
+    errorMessage.value = 'Failed to load columns. Please try again.'
     toast.error('Error', {
       description: 'Failed to load columns',
       duration: 3000
@@ -351,7 +490,7 @@ const loadColumns = async () => {
 const addTask = async () => {
   try {
     if (!newTask.value.title) {
-      error.value = 'Task title is required'
+      errorMessage.value = 'Task title is required'
       toast.error('Error', {
         description: 'Task title is required',
         duration: 3000
@@ -360,7 +499,7 @@ const addTask = async () => {
     }
 
     if (!currentProjectId.value) {
-      error.value = 'Please select a project first'
+      errorMessage.value = 'Please select a project first'
       toast.error('Error', {
         description: 'Please select a project first',
         duration: 3000
@@ -369,7 +508,7 @@ const addTask = async () => {
     }
 
     if (!newTask.value.status) {
-      error.value = 'Please select a column'
+      errorMessage.value = 'Please select a column'
       toast.error('Error', {
         description: 'Please select a column',
         duration: 3000
@@ -378,7 +517,7 @@ const addTask = async () => {
     }
 
     loading.value = true
-    error.value = null
+    errorMessage.value = ''
 
     const taskToCreate = {
       title: newTask.value.title,
@@ -405,7 +544,7 @@ const addTask = async () => {
     })
   } catch (err) {
     console.error('Error creating task:', err)
-    error.value = 'Failed to create task. Please try again.'
+    errorMessage.value = 'Failed to create task. Please try again.'
     toast.error('Error', {
       description: 'Failed to create task',
       duration: 3000
@@ -456,7 +595,7 @@ onMounted(async () => {
   }
 })
 
-// Open column management dialog
+// Method to open column management dialog
 const openColumnDialog = () => {
   showColumnDialog.value = true
 }
@@ -541,39 +680,52 @@ const formatDate = (date: Date): string => {
 }
 
 // Open edit modal with task data
-const openEditModal = (task: SupabaseTask) => {
+const openEditModal = async (task: SupabaseTask) => {
   // Prevent opening modal when dragging
   if (draggedTaskId.value) return
 
-  // Format dates for input fields (YYYY-MM-DD format) using moment-timezone
-  const formatDateForInput = (date: Date | null): string => {
-    if (!date) return ''
-    // Format date to YYYY-MM-DD in local timezone
-    return moment(date).tz('Asia/Jakarta').format('YYYY-MM-DD')
+  // If the task has no status, assign it the first column's id
+  if (!task.status && columns.value.length > 0) {
+    task.status = columns.value[0].id
   }
 
-  // Format time for input fields (HH:MM format) using moment-timezone
-  const formatTimeForInput = (date: Date | null): string => {
-    if (!date) return ''
-    // Format time to HH:mm in local timezone
-    return moment(date).tz('Asia/Jakarta').format('HH:mm')
+  // Format date for display in edit form
+  const formatDateForInput = (date: Date) => {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
   }
 
-  // Convert dates from UTC to local timezone
+  // Format time for display in edit form
+  const formatTimeForInput = (date: Date) => {
+    const hours = String(date.getHours()).padStart(2, '0')
+    const minutes = String(date.getMinutes()).padStart(2, '0')
+    return `${hours}:${minutes}`
+  }
+
+  // Parse dates
   const startDate = task.start_task ? moment(task.start_task).tz('Asia/Jakarta').toDate() : null
   const endDate = task.end_task ? moment(task.end_task).tz('Asia/Jakarta').toDate() : null
+
+  // Load project users
+  await loadProjectUsers(task.project_id);
+
+  // Load users assigned to this task
+  const assignedUsers = await loadTaskAssignedUsers(task.id);
 
   editingTask.value = {
     id: task.id,
     title: task.title,
-    description: task.description,
+    description: task.description || '',
     status: task.status,
     project_id: task.project_id,
     // We don't need to set start_task and end_task directly as we'll compute them from the date/time fields
     start_task_date: startDate ? formatDateForInput(startDate) : '',
     start_task_time: startDate ? formatTimeForInput(startDate) : '',
     end_task_date: endDate ? formatDateForInput(endDate) : '',
-    end_task_time: endDate ? formatTimeForInput(endDate) : ''
+    end_task_time: endDate ? formatTimeForInput(endDate) : '',
+    assignedUsers: assignedUsers
   }
 
   isEditModalOpen.value = true
@@ -588,7 +740,7 @@ const closeEditModal = () => {
 const updateTask = async () => {
   try {
     loading.value = true
-    error.value = null
+    errorMessage.value = ''
 
     // Combine date and time for start_task using moment-timezone to preserve local timezone
     let startTaskDate = null
@@ -609,6 +761,9 @@ const updateTask = async () => {
     }
 
     const taskId = editingTask.value.id
+    const projectId = editingTask.value.project_id
+
+    // 1. Update task details in tasks table
     const updates = {
       title: editingTask.value.title,
       description: editingTask.value.description,
@@ -620,7 +775,37 @@ const updateTask = async () => {
     // Update in Supabase
     const updatedTask = await updateTaskService(taskId, updates)
 
-    // Update in local state
+    // 2. Handle user assignments
+    // First remove all existing user assignments for this task
+    const { error: deleteError } = await supabase
+      .from('project_has_users')
+      .delete()
+      .eq('task_id', taskId)
+
+    if (deleteError) {
+      console.error('Error removing task users:', deleteError)
+      throw new Error('Failed to update task users')
+    }
+
+    // Then add new user assignments if any
+    if (editingTask.value.assignedUsers.length > 0) {
+      const taskUsers = editingTask.value.assignedUsers.map(user => ({
+        project_id: projectId,
+        user_id: user.id,
+        task_id: taskId
+      }))
+
+      const { error: insertError } = await supabase
+        .from('project_has_users')
+        .insert(taskUsers)
+
+      if (insertError) {
+        console.error('Error adding task users:', insertError)
+        throw new Error('Failed to assign users to task')
+      }
+    }
+
+    // 3. Update in local state
     const taskIndex = tasks.value.findIndex(t => t.id === taskId)
     if (taskIndex !== -1) {
       tasks.value[taskIndex] = {
@@ -637,11 +822,11 @@ const updateTask = async () => {
       description: 'Task updated successfully',
       duration: 3000
     })
-  } catch (err) {
+  } catch (err: any) {
     console.error('Error updating task:', err)
-    error.value = 'Failed to update task. Please try again.'
+    errorMessage.value = err.message || 'Failed to update task. Please try again.'
     toast.error('Error', {
-      description: 'Failed to update task. Please try again.',
+      description: errorMessage.value,
       duration: 3000
     })
   } finally {

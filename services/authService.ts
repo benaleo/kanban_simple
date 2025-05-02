@@ -11,6 +11,7 @@ export interface UserProfile {
 
 // User table in Supabase
 const PROFILES_TABLE = 'profiles';
+const USER_EMAILS_TABLE = 'user_emails';
 
 /**
  * Register a new user
@@ -44,6 +45,19 @@ export const registerUser = async (email: string, password: string, username: st
   if (profileError) {
     console.error('Error creating user profile:', profileError);
     throw profileError;
+  }
+
+  // Create a user email for the user
+  const { error: emailError } = await supabase
+    .from(USER_EMAILS_TABLE)
+    .insert({
+      id: authData.user.id,
+      email
+    });
+
+  if (emailError) {
+    console.error('Error creating user email:', emailError);
+    throw emailError;
   }
 
   return authData.user;

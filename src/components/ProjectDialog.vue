@@ -49,6 +49,26 @@
               placeholder="Enter project name" autofocus />
           </div>
 
+          <div class="form-group">
+            <label for="projectUsers">Invite Users (by email)</label>
+            <div class="flex items-center mb-2">
+              <input type="text" id="userEmail" v-model="newUserEmail" class="form-input" placeholder="Enter user email"
+                @keydown.enter.prevent="addUserEmail" />
+              <button type="button" @click="addUserEmail" class="ml-2 add-button">
+                <i class="fas fa-plus"></i> Add
+              </button>
+            </div>
+            <div v-if="emailError" class="text-red-500 text-sm mb-2">{{ emailError }}</div>
+            <div v-if="projectForm.userEmails.length > 0" class="selected-users">
+              <div v-for="(email, index) in projectForm.userEmails" :key="index" class="selected-user">
+                <span>{{ email }}</span>
+                <button type="button" @click="removeUserEmail(index)" class="remove-user-btn">
+                  &times;
+                </button>
+              </div>
+            </div>
+          </div>
+
           <div class="dialog-actions">
             <button type="button" class="cancel-button" @click="cancelEdit">Cancel</button>
             <button type="submit" class="save-button" :disabled="isSubmitting">
@@ -87,6 +107,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { supabase } from '../../utils/supabase';
 import { getProjects, createProject, updateProject, deleteProject as deleteProjectService } from "../../services/projectService";
 import { toast } from 'vue-sonner';
 
@@ -109,8 +130,12 @@ const projectToDelete = ref<any>(null);
 // Form state
 const projectForm = ref({
   id: '',
-  name: ''
+  name: '',
+  userEmails: [] as string[]
 });
+
+const newUserEmail = ref('');
+const emailError = ref('');
 
 // Computed properties
 const selectedProject = computed(() => {
@@ -149,21 +174,52 @@ function selectProject(project: any) {
 }
 
 function startAddProject() {
-  isAddMode.value = true;
-  isEditMode.value = false;
   projectForm.value = {
     id: '',
-    name: ''
+    name: '',
+    userEmails: []
   };
+  isEditMode.value = false;
+  isAddMode.value = true;
+  emailError.value = '';
 }
 
-function editProject(project: any) {
-  isEditMode.value = true;
-  isAddMode.value = false;
+async function editProject(project: any) {
+  // Fetch current project users
+  const { data: projectUsers, error: fetchError } = await supabase
+    .from('project_has_users')
+    .select('user_id')
+    .eq('project_id', project.id);
+
+  if (fetchError) {
+    console.error('Error fetching project users:', fetchError);
+  }
+
+  // Get emails for these users
+  const userIds = projectUsers?.map((pu: { user_id: string }) => pu.user_id) || [];
+  let userEmails: string[] = [];
+
+  if (userIds.length > 0) {
+    const { data: users, error: usersError } = await supabase
+      .from('user_emails')
+      .select('email')
+      .in('email', userEmails);
+
+    if (usersError) {
+      console.error('Error fetching user emails:', usersError);
+    } else {
+      userEmails = users?.map((u: { email: string }) => u.email) || [];
+    }
+  }
+
   projectForm.value = {
     id: project.id,
-    name: project.name
+    name: project.name,
+    userEmails: userEmails
   };
+
+  isEditMode.value = true;
+  isAddMode.value = false;
 }
 
 function cancelEdit() {
@@ -171,31 +227,123 @@ function cancelEdit() {
   isAddMode.value = false;
 }
 
+// Add user email to the list
+function addUserEmail() {
+  emailError.value = '';
+  const email = newUserEmail.value.trim();
+
+  // Basic email validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!email) {
+    emailError.value = 'Please enter an email address';
+    return;
+  }
+  if (!emailRegex.test(email)) {
+    emailError.value = 'Please enter a valid email address';
+    return;
+  }
+
+  // Check for duplicates
+  if (projectForm.value.userEmails.includes(email)) {
+    emailError.value = 'This email has already been added';
+    return;
+  }
+
+  projectForm.value.userEmails.push(email);
+  newUserEmail.value = '';
+}
+
+// Remove user email from the list
+function removeUserEmail(index: number) {
+  projectForm.value.userEmails.splice(index, 1);
+}
+
 async function saveProject() {
   try {
     isSubmitting.value = true;
     errorMessage.value = '';
+    emailError.value = '';
+
+    let project: any;
+    let invalidEmails: string[] = [];
+
+    // 1. First get or create all users from emails to get their IDs
+    const userIds: { email: string, id: string }[] = [];
+
+    for (const email of projectForm.value.userEmails) {
+      // Check if user with this email exists in user_emails
+      const { data: userData, error: userError } = await supabase
+        .from('user_emails')
+        .select('id, email')
+        .eq('email', email)
+        .single();
+
+      if (userError || !userData) {
+        invalidEmails.push(email);
+        continue;
+      }
+
+      userIds.push({ email, id: userData.id });
+    }
+
+    // Show error if any invalid emails
+    if (invalidEmails.length > 0) {
+      const errorMsg = `The following emails were not found: ${invalidEmails.join(', ')}`;
+      toast.error('Invalid Users', {
+        description: errorMsg,
+        duration: 5000
+      });
+      throw new Error(errorMsg);
+    }
 
     if (isEditMode.value) {
-      // Update existing project
-      const updatedProject = await updateProject(projectForm.value.id, {
+      // 2. Update existing project
+      project = await updateProject(projectForm.value.id, {
         name: projectForm.value.name
       });
 
-      // Update project in local array
-      const index = projects.value.findIndex(p => p.id === updatedProject.id);
+      // 3. Update project in local array
+      const index = projects.value.findIndex(p => p.id === project.id);
       if (index !== -1) {
-        projects.value[index] = updatedProject;
+        projects.value[index] = project;
+      }
+
+      // 4. Handle user assignments - first remove all existing users
+      const { error: deleteError } = await supabase
+        .from('project_has_users')
+        .delete()
+        .eq('project_id', project.id);
+
+      if (deleteError) {
+        console.error('Error removing project users:', deleteError);
+        throw new Error('Failed to update project users');
       }
     } else {
       // Add new project
-      const newProject = await createProject({
+      project = await createProject({
         name: projectForm.value.name
       });
 
       // Add to local array
-      projects.value.push(newProject);
-      selectedProjectId.value = newProject.id;
+      projects.value.push(project);
+      selectedProjectId.value = project.id;
+    }
+
+    // 5. Now add all the current users to the project
+    if (userIds.length > 0) {
+      const projectUsers = userIds.map((user: { id: string }) => ({
+        project_id: project.id,
+        user_id: user.id
+      }));
+
+      const { error: insertError } = await supabase
+        .from('project_has_users')
+        .insert(projectUsers);
+
+      if (insertError) {
+        console.error('Error adding project users:', insertError);
+        throw new Error('Failed to add users to project');
+      }
     }
 
     // Reset form state
@@ -210,7 +358,7 @@ async function saveProject() {
   } catch (error: any) {
     errorMessage.value = error.message || 'Failed to save project';
     toast.error('Error', {
-      description: 'Failed to save project. Please try again.',
+      description: errorMessage.value,
       duration: 3000
     })
   } finally {
@@ -452,6 +600,33 @@ input {
 .project-actions {
   display: flex;
   gap: 0.5rem;
+}
+
+.selected-users {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.selected-user {
+  display: flex;
+  align-items: center;
+  background-color: rgba(79, 70, 229, 0.2);
+  border: 1px solid rgba(79, 70, 229, 0.4);
+  border-radius: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+.remove-user-btn {
+  margin-left: 0.5rem;
+  color: #ef4444;
+  font-size: 1rem;
+  font-weight: bold;
+  background: none;
+  border: none;
+  cursor: pointer;
 }
 
 .delete-confirm {
