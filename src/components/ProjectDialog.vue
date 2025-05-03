@@ -144,21 +144,21 @@
         <!-- Confirm Leave Modal -->
         <div v-if="showLeaveConfirm" class="delete-confirm">
           <p>Are you sure you want to leave <strong>{{ projectToDelete?.name }}</strong>?</p>
-          <p class="warning">This will delete all tasks associated with this project and cannot be undone.</p>
+          <p class="warning">This will remove your access to this project and cannot be undone.</p>
 
           <div class="dialog-actions">
-            <button @click="cancelDelete"
+            <button @click="cancelLeave"
               class="btn bg-slate-200 hover:bg-slate-400 transition-all duration-300 whitespace-nowrap">Cancel</button>
             <button @click="leaveProject"
               class="btn text-white bg-red-400 hover:bg-red-500 transition-all duration-300 whitespace-nowrap"
               :disabled="isSubmitting">
-              {{ isSubmitting ? 'Deleting...' : 'Delete Project' }}
+              {{ isSubmitting ? 'Leaving...' : 'Leave Project' }}
             </button>
           </div>
         </div>
 
         <!-- Selection Actions -->
-        <div v-if="!isEditMode && !isAddMode && !showDeleteConfirm" class="selection-actions">
+        <div v-if="!isEditMode && !isAddMode && !showDeleteConfirm && !showLeaveConfirm" class="selection-actions">
           <button v-if="selectedProjectId" class="primary-button" @click="$emit('select', selectedProject)">
             Open Selected Project
           </button>
@@ -209,7 +209,12 @@ const emailError = ref('');
 
 // Computed properties
 const selectedProject = computed(() => {
-  return projects.value.find(p => p.id === selectedProjectId.value) || null;
+  // Search in regular projects first
+  const foundProject = projects.value.find(p => p.id === selectedProjectId.value);
+  if (foundProject) return foundProject;
+  
+  // If not found, search in invited projects
+  return projectInviteds.value.find(p => p.id === selectedProjectId.value) || null;
 });
 
 // Lifecycle hooks
@@ -257,6 +262,7 @@ async function loadInvitedProjects() {
 }
 
 function selectProject(project: any) {
+  console.log("project", project);
   selectedProjectId.value = project.id;
 }
 
@@ -540,7 +546,7 @@ async function leaveProject() {
     // Remove from local array with id project.id
     projectInviteds.value = projectInviteds.value.filter(p => p.id !== projectToDelete.value?.id);
     projects.value = projects.value.filter(p => p.id !== projectToDelete.value?.id);
-    
+
 
     // Reset selected project if needed
     if (selectedProjectId.value === projectToDelete.value.id) {
