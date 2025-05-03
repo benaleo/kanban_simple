@@ -20,7 +20,20 @@
         <!-- Task Creation Form -->
         <div
           class="flex flex-col gap-2 bg-white/10 backdrop-blur-md rounded-xl p-6 mb-8 shadow-xl border border-white/20">
-          <h2 class="text-2xl font-semibold text-white">Create New Task</h2>
+          <div class="flex justify-between items-center">
+            <h2 class="text-2xl font-semibold text-white">Create New Task</h2>
+            <div class="flex gap-2">
+              <div class="tooltip">
+                <font-awesome-icon icon="box-archive" style="color: white" size="xl" @click="openSidebar"/>
+                <span class="tooltiptext">Archive</span>
+              </div>
+              <div class="tooltip">
+                <font-awesome-icon icon="gear" style="color: white" size="xl" />
+                <span class="tooltiptext">Setting</span>
+              </div>
+            </div>
+
+          </div>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="grid gap-2 col-span-1 md:col-span-2">
               <input v-model="newTask.title" placeholder="Task Title"
@@ -51,6 +64,9 @@
             </div>
           </div>
         </div>
+
+        <!-- drawer -->
+        <DrawerDialog :isOpen="isDrawerOpen" @update:isOpen="isDrawerOpen = $event" />
 
         <!-- Kanban Board -->
         <div class="flex flex-nowrap gap-4 mt-2 scroll-auto overflow-x-auto min-h-[calc(100vh-350px)] pb-4">
@@ -226,6 +242,7 @@ import ProjectDialog from '@/components/ProjectDialog.vue'
 import ColumnDialog from '@/components/ColumnDialog.vue'
 import type { Column, EditingTask, NewTask, Task } from '@/types/kanban.type'
 import { realtimeTask } from '@/composables/useRealtimeTask'
+import DrawerDialog from '@/components/DrawerDialog.vue'
 
 // Global state
 const columns = ref<Column[]>([])
@@ -362,8 +379,18 @@ const loadTaskAssignedUsers = async (taskId: string) => {
 };
 
 // Project dialog state
+const isDrawerOpen = ref(false)
 const showNoProjectDialog = ref(false)
 const showColumnDialog = ref(false)
+
+// Drawer methods
+function openSidebar() {
+  isDrawerOpen.value = true
+}
+
+function closeSidebar() {
+  isDrawerOpen.value = false
+}
 
 // Router for navigation
 const router = useRouter()
@@ -595,14 +622,14 @@ onMounted(async () => {
   if (currentProjectId.value) {
     fetchTasks()
     loadColumns()
-    
+
     // Add event listener for column changes from other users
     window.addEventListener('column-change', columnChangeHandler)
 
     // Add event listener for task changes from other users
     window.addEventListener('task-change', taskChangeHandler)
-    
-    } else {
+
+  } else {
     // If no project ID, show project dialog
     showNoProjectDialog.value = true
   }
@@ -614,7 +641,7 @@ onUnmounted(() => {
 
   // Remove task change event listener
   window.removeEventListener('task-change', taskChangeHandler)
-  
+
   // Remove column change event listener
   window.removeEventListener('column-change', columnChangeHandler)
 })
