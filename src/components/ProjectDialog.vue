@@ -45,7 +45,7 @@
             <h3>Invited Projects</h3>
           </div>
           <div v-if="projectInviteds.length > 0" class="projects-grid">
-            <div v-for="project in projectInviteds" :key="project.id" class="project-card"
+            <div v-for="project in projectInviteds" :key="project.id" :id="project.id" class="project-card"
               :class="{ 'selected': selectedProjectId === project.id }" @click="selectProject(project)">
               <div class="project-card-content">
                 <h4 class="project-name">{{ project.name }}</h4>
@@ -60,7 +60,7 @@
                       </div>
                     </div>
                   </div>
-                  <button @click.stop="confirmDeleteProject(project)" class="tooltip delete-button"
+                  <button @click.stop="confirmLeaveProject(project)" class="tooltip delete-button"
                     title="Leave Project">
                     <font-awesome-icon icon="right-from-bracket" style="color: white" />
                     <div class="tooltiptext">Leave Project</div>
@@ -141,6 +141,22 @@
           </div>
         </div>
 
+        <!-- Confirm Leave Modal -->
+        <div v-if="showLeaveConfirm" class="delete-confirm">
+          <p>Are you sure you want to leave <strong>{{ projectToDelete?.name }}</strong>?</p>
+          <p class="warning">This will delete all tasks associated with this project and cannot be undone.</p>
+
+          <div class="dialog-actions">
+            <button @click="cancelDelete"
+              class="btn bg-slate-200 hover:bg-slate-400 transition-all duration-300 whitespace-nowrap">Cancel</button>
+            <button @click="leaveProject"
+              class="btn text-white bg-red-400 hover:bg-red-500 transition-all duration-300 whitespace-nowrap"
+              :disabled="isSubmitting">
+              {{ isSubmitting ? 'Deleting...' : 'Delete Project' }}
+            </button>
+          </div>
+        </div>
+
         <!-- Selection Actions -->
         <div v-if="!isEditMode && !isAddMode && !showDeleteConfirm" class="selection-actions">
           <button v-if="selectedProjectId" class="primary-button" @click="$emit('select', selectedProject)">
@@ -156,7 +172,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { supabase } from '../../utils/supabase';
-import { getProjects, createProject, updateProject, deleteProject as deleteProjectService, listAssignedUsers, getInvitedProjects } from "../../services/projectService";
+import { getProjects, createProject, updateProject, deleteProject as deleteProjectService, listAssignedUsers, getInvitedProjects, leaveProjectService } from "../../services/projectService";
 import { toast } from 'vue-sonner';
 import type { UserProfile } from '../../services/authService';
 import type { Project, ProjectList } from '@/types/project.type';
@@ -175,6 +191,7 @@ const selectedProjectId = ref('');
 const isEditMode = ref(false);
 const isAddMode = ref(false);
 const showDeleteConfirm = ref(false);
+const showLeaveConfirm = ref(false);
 const projectToDelete = ref<any>(null);
 const assignedUsers = ref<UserProfile[]>([]);
 const selectedRemovedUserIds = ref<string[]>([]);
@@ -496,6 +513,61 @@ async function deleteProject() {
     isSubmitting.value = false;
   }
 }
+
+function confirmLeaveProject(project: any) {
+  projectToDelete.value = project;
+  showLeaveConfirm.value = true;
+}
+
+function cancelLeave() {
+  projectToDelete.value = null;
+  showLeaveConfirm.value = false;
+}
+
+async function leaveProject() {
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData.user) {
+    throw new Error('User not authenticated');
+  }
+  if (!projectToDelete.value) return;
+
+  try {
+    isSubmitting.value = true;
+    errorMessage.value = '';
+
+    await leaveProjectService(projectToDelete.value.id, userData.user.id);
+
+    // Remove from local array with id project.id
+    projectInviteds.value = projectInviteds.value.filter(p => p.id !== projectToDelete.value?.id);
+    projects.value = projects.value.filter(p => p.id !== projectToDelete.value?.id);
+    
+
+    // Reset selected project if needed
+    if (selectedProjectId.value === projectToDelete.value.id) {
+      selectedProjectId.value = projects.value.length > 0 ? projects.value[0].id : '';
+    }
+
+    // Reset state
+    showLeaveConfirm.value = false;
+    projectToDelete.value = null;
+
+    // Show success toast
+    toast.success('Success', {
+      description: 'Project left successfully',
+      duration: 3000
+    })
+  } catch (error: any) {
+    errorMessage.value = error.message || 'Failed to leave project';
+    toast.error('Error', {
+      description: 'Failed to leave project. Please try again.',
+      duration: 3000
+    })
+  } finally {
+    isSubmitting.value = false;
+  }
+}
+
+
 
 async function loadAssignedUsers(projectId: string) {
   try {

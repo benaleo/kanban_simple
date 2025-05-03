@@ -331,3 +331,16 @@ export const listAssignedUsers = async (projectId: string): Promise<UserProfile[
     };
   }) as UserProfile[];
 };
+
+export const leaveProjectService = async (projectId: string, userId: string): Promise<void> => {
+  const { error } = await supabase
+    .from('project_has_users')
+    .delete()
+    .eq('project_id', projectId)
+    .eq('user_id', userId);
+
+  if (error) {
+    console.error('Error leaving project:', error);
+    throw error;
+  }
+};
