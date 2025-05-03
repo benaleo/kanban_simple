@@ -7,6 +7,7 @@ export interface Task {
   start_task?: Date | null;
   end_task?: Date | null;
   project_id: string;
+  is_deleted?: boolean;
 }
 
 export interface Column {

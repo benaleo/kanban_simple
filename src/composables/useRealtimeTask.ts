@@ -117,12 +117,29 @@ export const realtimeTask = (currentProjectId: string, tasks: Ref<Task[]>, colum
         } else if (payload.eventType === 'UPDATE') {
           const updatedTask = payload.new as Task
           const index = tasks.value.findIndex(task => task.id === updatedTask.id)
-  
-          if (index !== -1) {
-            // Preserve any local state that might not be in the database record
-            tasks.value[index] = {
-              ...tasks.value[index],
-              ...updatedTask
+
+          // Handle soft delete: if is_deleted is true, remove from local array and dispatch event
+          if (updatedTask.is_deleted) {
+            if (index !== -1) {
+              tasks.value.splice(index, 1)
+              window.dispatchEvent(
+                new CustomEvent('task-change', {
+                  detail: {
+                    ...payload,
+                    fullData: updatedTask,
+                    softDelete: true
+                  }
+                })
+              )
+              console.log('Task soft-deleted and removed from Kanban:', updatedTask.id)
+            }
+          } else {
+            // Normal update
+            if (index !== -1) {
+              tasks.value[index] = {
+                ...tasks.value[index],
+                ...updatedTask
+              }
             }
           }
         } else if (payload.eventType === 'DELETE') {
