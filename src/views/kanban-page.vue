@@ -2,7 +2,7 @@
   <auth-layout>
     <div class="min-h-screen w-full galaxy-bg p-6 overflow-hidden" :style="currentProjectId ? '' : 'position: fixed'">
       <!-- Loading and error messages -->
-      <div v-if="loading" class="fixed inset-0 w-full bg-purple-600/10 text-white p-2 text-center z-50">
+      <div v-if="!currentProjectId" class="fixed inset-0 w-full bg-purple-600/10 text-white p-2 text-center z-50">
         <div class="w-full min-h-screen flex flex-col justify-start items-center">
           <div id="bounce-up">
             <font-awesome-icon icon="circle-chevron-up" class="mb-4" size="xl" />
@@ -158,47 +158,47 @@
                 class="w-3/4 p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
             </div>
           </div>
+        </div>
 
-          <!-- Assigned Users -->
-          <div>
-            <label class="block text-white text-sm font-medium mb-1">Assign Users</label>
-            <div class="mb-2 flex flex-col gap-2">
-              <select v-model="selectedUserId"
-                class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
-                <option value="" disabled>Select a user</option>
-                <option v-for="user in availableUsers" :key="user.id" :value="user.id">{{ user.email }}</option>
-              </select>
-              <button @click="addUserToTask"
-                class="self-end bg-white/20 hover:bg-white/30 text-white font-medium py-2 px-4 rounded-lg transition-colors">
-                Add User
+        <!-- Assigned Users -->
+        <div>
+          <label class="block text-white text-sm font-medium mb-1">Assign Users</label>
+          <div class="mb-2 flex flex-col gap-2">
+            <select v-model="selectedUserId"
+              class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
+              <option value="" disabled>Select a user</option>
+              <option v-for="user in availableUsers" :key="user.id" :value="user.id">{{ user.email }}</option>
+            </select>
+            <button @click="addUserToTask"
+              class="self-end bg-white/20 hover:bg-white/30 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+              Add User
+            </button>
+          </div>
+
+          <!-- Display Assigned Users -->
+          <div v-if="editingTask.assignedUsers.length > 0" class="mt-2 flex flex-wrap gap-2">
+            <div v-for="(user, index) in editingTask.assignedUsers" :key="user.id"
+              class="flex items-center bg-white/20 rounded-lg px-3 py-1 text-white text-sm">
+              <span>{{ user.email }}</span>
+              <button @click="removeUserFromTask(index)" class="ml-2 text-red-300 hover:text-red-500">
+                &times;
               </button>
             </div>
-
-            <!-- Display Assigned Users -->
-            <div v-if="editingTask.assignedUsers.length > 0" class="mt-2 flex flex-wrap gap-2">
-              <div v-for="(user, index) in editingTask.assignedUsers" :key="user.id"
-                class="flex items-center bg-white/20 rounded-lg px-3 py-1 text-white text-sm">
-                <span>{{ user.email }}</span>
-                <button @click="removeUserFromTask(index)" class="ml-2 text-red-300 hover:text-red-500">
-                  &times;
-                </button>
-              </div>
-            </div>
-            <div v-else class="text-white/50 text-sm italic mt-2">
-              No users assigned
-            </div>
           </div>
-
-          <div class="flex justify-end gap-2 mt-6">
-            <button @click="closeEditModal"
-              class="bg-white/20 hover:bg-white/30 text-white font-medium py-2 px-4 rounded-lg transition-colors">
-              Cancel
-            </button>
-            <button @click="updateTask"
-              class="bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-bold py-2 px-4 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl">
-              Save Changes
-            </button>
+          <div v-else class="text-white/50 text-sm italic mt-2">
+            No users assigned
           </div>
+        </div>
+
+        <div class="flex justify-end gap-2 mt-6">
+          <button @click="closeEditModal"
+            class="bg-white/20 hover:bg-white/30 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+            Cancel
+          </button>
+          <button @click="updateTask"
+            class="bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-bold py-2 px-4 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl">
+            Save Changes
+          </button>
         </div>
       </div>
     </div>
@@ -210,8 +210,6 @@ import { ref, onMounted, computed, watch } from 'vue'
 import moment from 'moment-timezone'
 import { useRoute, useRouter } from 'vue-router'
 import AuthLayout from '../layouts/AuthLayout.vue'
-import ProjectDialog from '@/components/ProjectDialog.vue'
-import ColumnDialog from '@/components/ColumnDialog.vue'
 // External modules
 // Import Supabase Kanban service
 import type { Task as SupabaseTask } from '../../services/kanbanService'
@@ -224,7 +222,9 @@ document.title = "Beno Kanban"
 // UI components
 import { toast } from 'vue-sonner'
 import { Vue3Lottie } from 'vue3-lottie'
-import LoadingJSON from "@/assets/html/loading.json"
+import LoadingJSON from "../assets/html/loading.json"
+import ProjectDialog from '@/components/ProjectDialog.vue'
+import ColumnDialog from '@/components/ColumnDialog.vue'
 
 // Define types
 interface Column {
@@ -558,7 +558,7 @@ const addTask = async () => {
 const removeTask = async (taskId: string) => {
   try {
     loading.value = true
-    error.value = null
+    errorMessage.value = ''
 
     // Delete from Supabase
     await deleteTask(taskId)
@@ -573,7 +573,7 @@ const removeTask = async (taskId: string) => {
     })
   } catch (err) {
     console.error('Error deleting task:', err)
-    error.value = 'Failed to delete task. Please try again.'
+    errorMessage.value = 'Failed to delete task. Please try again.'
     toast.error('Error', {
       description: 'Failed to delete task',
       duration: 3000
@@ -644,7 +644,7 @@ const onDrop = async (event: DragEvent, targetColumnId: string): Promise<void> =
       })
     } catch (err) {
       console.error('Failed to update task status:', err)
-      error.value = 'Failed to update task status. Please try again.'
+      errorMessage.value = 'Failed to update task status. Please try again.'
 
       // Reload tasks to reset to server state
       try {

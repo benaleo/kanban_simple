@@ -13,13 +13,13 @@ const router = createRouter({
     {
       path: '/login',
       name: 'login',
-      component: () => import('../views/LoginView.vue'),
+      component: () => import('../views/login-view.vue'),
       meta: { guestOnly: true }
     },
     {
       path: '/register',
       name: 'register',
-      component: () => import('../views/RegisterView.vue'),
+      component: () => import('../views/register-view.vue'),
       meta: { guestOnly: true }
     },
     {
