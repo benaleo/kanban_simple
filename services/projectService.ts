@@ -2,7 +2,7 @@ import type { User } from '@supabase/supabase-js';
 import { supabase } from '../utils/supabase';
 import { v4 as uuidv4 } from 'uuid';
 import type { getUserProfile, UserProfile } from './authService';
-import type { Project } from '@/types/project.type';
+import type { Project, ProjectList } from '@/types/project.type';
 
 // Define Project interface
 
@@ -10,6 +10,7 @@ import type { Project } from '@/types/project.type';
 const PROJECTS_TABLE = 'projects';
 const COLUMNS_TABLE = 'task_columns';
 const PROJECT_USERS_TABLE = 'project_has_users';
+const PROFILES_TABLE = 'profiles';
 
 /**
  * Fetch all projects for the current user
@@ -63,27 +64,32 @@ export const getProjectById = async (projectId: string): Promise<Project> => {
 /**
  * Get invited projects
  */
-export const getInvitedProjects = async (): Promise<Project[]> => {
+export const getInvitedProjects = async (): Promise<ProjectList[]> => {
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) {
     throw new Error('User not authenticated');
   }
 
-  const { data, error } = await supabase
+  // Get projects where the current user is invited
+  const { data: projectUsers, error: projectUsersError } = await supabase
     .from(PROJECT_USERS_TABLE)
     .select('*')
     .eq('user_id', userData.user.id)
-    .order('created_at', { ascending: true });
+    .order('id', { ascending: true });
 
-  if (error) {
-    console.error('Error fetching projects:', error);
-    throw error;
+  if (projectUsersError) {
+    console.error('Error fetching projects:', projectUsersError);
+    throw projectUsersError;
   }
 
-  const invitedProjectIds = data.map(invited => invited.project_id);
+  const invitedProjectIds = projectUsers.map(invited => invited.project_id);
   console.log("invitedProjectIds", invitedProjectIds);
 
-  // get project form projects table with same in project_id
+  if (invitedProjectIds.length === 0) {
+    return []; // No invited projects
+  }
+
+  // Get all projects the user is invited to
   const { data: invitedProjects, error: invitedProjectsError } = await supabase
     .from(PROJECTS_TABLE)
     .select('*')
@@ -95,10 +101,64 @@ export const getInvitedProjects = async (): Promise<Project[]> => {
     throw invitedProjectsError;
   }
 
-  // Convert string dates to Date objects
-  return invitedProjects?.map(project => ({
-    ...project,
-  })) || [];
+  // Get project owners' profiles
+  const { data: projectOwnerData, error: projectOwnerError } = await supabase
+    .from(PROFILES_TABLE)
+    .select('user_id, username')
+    .in('user_id', invitedProjects.map(project => project.user_id));
+
+  if (projectOwnerError) {
+    console.error('Error fetching project owners:', projectOwnerError);
+    throw projectOwnerError;
+  }
+
+  // Get all user-project relationships for these projects
+  const { data: allProjectUsers, error: allProjectUsersError } = await supabase
+    .from(PROJECT_USERS_TABLE)
+    .select('*')
+    .in('project_id', invitedProjectIds);
+
+  if (allProjectUsersError) {
+    console.error('Error fetching project users:', allProjectUsersError);
+    throw allProjectUsersError;
+  }
+
+  // Get all invited users' profiles
+  const invitedUserIds = allProjectUsers.map(pu => pu.user_id);
+  const { data: allUserProfiles, error: allUserProfilesError } = await supabase
+    .from(PROFILES_TABLE)
+    .select('user_id, username, avatar_url')
+    .in('user_id', invitedUserIds);
+
+  if (allUserProfilesError) {
+    console.error('Error fetching user profiles:', allUserProfilesError);
+    throw allUserProfilesError;
+  }
+
+  // Map projects with their respective owners and invited users
+  return invitedProjects?.map(project => {
+    // Get owner username for this project
+    const projectOwner = projectOwnerData.find(owner => owner.user_id === project.user_id)?.username;
+    
+    // Get all users invited to this specific project (excluding the owner)
+    const projectInvitedUserIds = allProjectUsers
+      .filter(pu => pu.project_id === project.id && pu.user_id !== project.user_id)
+      .map(pu => pu.user_id);
+    
+    // Get profile details for invited users
+    const projectInvited = allUserProfiles
+      .filter(profile => projectInvitedUserIds.includes(profile.user_id))
+      .map(invited => ({
+        username: invited.username,
+        avatar_url: invited.avatar_url
+      }));
+    
+    return {
+      ...project,
+      project_owner: projectOwner,
+      project_invited: projectInvited
+    };
+  }) || [];
 };
 
 /**

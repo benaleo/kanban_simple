@@ -41,14 +41,27 @@
           </div>
 
           <!-- if have invited projects -->
-          <div v-if="projectInvited.length > 0" class="projects-grid">
-            <div v-for="project in projectInvited" :key="project.id" class="project-card"
+          <div class="project-list-header" v-if="projectInviteds.length > 0">
+            <h3>Invited Projects</h3>
+          </div>
+          <div v-if="projectInviteds.length > 0" class="projects-grid">
+            <div v-for="project in projectInviteds" :key="project.id" class="project-card"
               :class="{ 'selected': selectedProjectId === project.id }" @click="selectProject(project)">
               <div class="project-card-content">
                 <h4 class="project-name">{{ project.name }}</h4>
 
                 <div class="project-actions">
-                  <button @click.stop="confirmDeleteProject(project)" class="tooltip delete-button" title="Leave Project">
+                  <div class="flex items-center">
+                    <div class="tooltip" v-for="user in project.project_invited">
+                      <img :src="user.avatar_url == null ? 'public/default.jpg' : user.avatar_url" alt="User Avatar"
+                        class="user-avatar rounded-full w-6">
+                      <div class="tooltiptext">
+                        <h3 class="font-semibold">{{ user.username }}</h3>
+                      </div>
+                    </div>
+                  </div>
+                  <button @click.stop="confirmDeleteProject(project)" class="tooltip delete-button"
+                    title="Leave Project">
                     <font-awesome-icon icon="right-from-bracket" style="color: white" />
                     <div class="tooltiptext">Leave Project</div>
                   </button>
@@ -90,7 +103,8 @@
           <div class="grid gap-2">
             <div v-for="user in assignedUsers" :key="user.id" :id="user.id" class="user-card">
               <div class="relative flex gap-2 items-center">
-                <img :src="user.avatar_url == null ? 'public/default.jpg' : user.avatar_url" alt="User Avatar" class="user-avatar rounded-full w-12">
+                <img :src="user.avatar_url == null ? 'public/default.jpg' : user.avatar_url" alt="User Avatar"
+                  class="user-avatar rounded-full w-12">
                 <div class="user-details">
                   <h3 class="font-semibold">{{ user.username }}</h3>
                   <p class="text-sm text-gray-500">{{ user.email }}</p>
@@ -145,7 +159,7 @@ import { supabase } from '../../utils/supabase';
 import { getProjects, createProject, updateProject, deleteProject as deleteProjectService, listAssignedUsers, getInvitedProjects } from "../../services/projectService";
 import { toast } from 'vue-sonner';
 import type { UserProfile } from '../../services/authService';
-import type { Project } from '@/types/project.type';
+import type { Project, ProjectList } from '@/types/project.type';
 
 // Props and emits
 const emit = defineEmits(['close', 'select']);
@@ -164,7 +178,7 @@ const showDeleteConfirm = ref(false);
 const projectToDelete = ref<any>(null);
 const assignedUsers = ref<UserProfile[]>([]);
 const selectedRemovedUserIds = ref<string[]>([]);
-const projectInvited = ref<Project[]>([]);
+const projectInviteds = ref<ProjectList[]>([]);
 
 // Form state
 const projectForm = ref({
@@ -196,7 +210,7 @@ onMounted(async () => {
 
   await loadInvitedProjects();
 
-  console.log("projectInvited", projectInvited.value);
+  console.log("projectInvited", projectInviteds.value);
 });
 
 // Methods
@@ -217,7 +231,7 @@ async function loadInvitedProjects() {
   try {
     loading.value = true;
     errorMessage.value = '';
-    projectInvited.value = await getInvitedProjects();
+    projectInviteds.value = await getInvitedProjects();
   } catch (error: any) {
     errorMessage.value = error.message || 'Failed to load invited projects';
   } finally {
