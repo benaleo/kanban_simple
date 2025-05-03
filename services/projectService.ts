@@ -1,17 +1,15 @@
+import type { User } from '@supabase/supabase-js';
 import { supabase } from '../utils/supabase';
 import { v4 as uuidv4 } from 'uuid';
+import type { getUserProfile, UserProfile } from './authService';
+import type { Project } from '@/types/project.type';
 
 // Define Project interface
-export interface Project {
-  id: string;
-  name: string;
-  user_id: string;
-  created_at: Date;
-}
 
 // Table name in Supabase
 const PROJECTS_TABLE = 'projects';
 const COLUMNS_TABLE = 'task_columns';
+const PROJECT_USERS_TABLE = 'project_has_users';
 
 /**
  * Fetch all projects for the current user
@@ -60,6 +58,47 @@ export const getProjectById = async (projectId: string): Promise<Project> => {
     ...data,
     created_at: new Date(data.created_at)
   };
+};
+
+/**
+ * Get invited projects
+ */
+export const getInvitedProjects = async (): Promise<Project[]> => {
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData.user) {
+    throw new Error('User not authenticated');
+  }
+
+  const { data, error } = await supabase
+    .from(PROJECT_USERS_TABLE)
+    .select('*')
+    .eq('user_id', userData.user.id)
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching projects:', error);
+    throw error;
+  }
+
+  const invitedProjectIds = data.map(invited => invited.project_id);
+  console.log("invitedProjectIds", invitedProjectIds);
+
+  // get project form projects table with same in project_id
+  const { data: invitedProjects, error: invitedProjectsError } = await supabase
+    .from(PROJECTS_TABLE)
+    .select('*')
+    .in('id', invitedProjectIds)
+    .order('created_at', { ascending: true });
+
+  if (invitedProjectsError) {
+    console.error('Error fetching projects:', invitedProjectsError);
+    throw invitedProjectsError;
+  }
+
+  // Convert string dates to Date objects
+  return invitedProjects?.map(project => ({
+    ...project,
+  })) || [];
 };
 
 /**
@@ -133,7 +172,7 @@ export const createProject = async (projectData: { name: string }): Promise<Proj
  * Update a project
  */
 export const updateProject = async (
-  projectId: string, 
+  projectId: string,
   updates: { name: string }
 ): Promise<Project> => {
   const { data, error } = await supabase
@@ -179,4 +218,56 @@ export const deleteProject = async (projectId: string): Promise<void> => {
     console.error('Error deleting project:', error);
     throw error;
   }
+};
+
+
+export const listAssignedUsers = async (projectId: string): Promise<UserProfile[]> => {
+  const { data: projectUserData, error: projectUserError } = await supabase
+    .from('project_has_users')
+    .select('user_id')
+    .eq('project_id', projectId);
+
+  if (projectUserError) {
+    console.error('Error fetching project users:', projectUserError);
+    throw projectUserError;
+  }
+
+  if (!projectUserData || projectUserData.length === 0) {
+    return [];
+  }
+
+  const userIds = projectUserData.map((pu: { user_id: string }) => pu.user_id);
+  const { data: userData, error: userError } = await supabase
+    .from('profiles')
+    .select('user_id, username, avatar_url')
+    .in('user_id', userIds);
+
+  if (userError) {
+    console.error('Error loading user details:', userError);
+    throw userError;
+  }
+
+  const { data: userEmailData, error: userEmailError } = await supabase
+    .from('user_emails')
+    .select('id, email')
+    .in('id', userIds);
+
+  if (userEmailError) {
+    console.error('Error loading user email details:', userEmailError);
+    throw userEmailError;
+  }
+
+  const userEmailMap = userEmailData.reduce((map, ue : {id: string, email: string}) => {
+    map[ue.id] = ue.email;
+    return map;
+  }, {} as Record<string, string>);
+
+  return userData.map(user => {
+    return {
+      id: user.user_id,
+      username: user.username,
+      avatar_url: user.avatar_url,
+      email: userEmailMap[user.user_id] as string
+    };
+  }) as UserProfile[];
 };

@@ -7,6 +7,7 @@ export interface UserProfile {
   username: string;
   avatar_url?: string;
   created_at: Date;
+  email?: string;
 }
 
 // User table in Supabase

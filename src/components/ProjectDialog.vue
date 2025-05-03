@@ -12,7 +12,7 @@
           <div class="project-list-header">
             <h3>Your Projects</h3>
             <button @click="startAddProject" class="add-button">
-              <i class="fas fa-plus"></i> New Project
+              <font-awesome-icon icon="plus" />New Project
             </button>
           </div>
 
@@ -39,6 +39,23 @@
               </div>
             </div>
           </div>
+
+          <!-- if have invited projects -->
+          <div v-if="projectInvited.length > 0" class="projects-grid">
+            <div v-for="project in projectInvited" :key="project.id" class="project-card"
+              :class="{ 'selected': selectedProjectId === project.id }" @click="selectProject(project)">
+              <div class="project-card-content">
+                <h4 class="project-name">{{ project.name }}</h4>
+
+                <div class="project-actions">
+                  <button @click.stop="confirmDeleteProject(project)" class="tooltip delete-button" title="Leave Project">
+                    <font-awesome-icon icon="right-from-bracket" style="color: white" />
+                    <div class="tooltiptext">Leave Project</div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Add/Edit Project Form -->
@@ -55,7 +72,7 @@
               <input type="text" id="userEmail" v-model="newUserEmail" class="form-input" placeholder="Enter user email"
                 @keydown.enter.prevent="addUserEmail" />
               <button type="button" @click="addUserEmail" class="ml-2 add-button">
-                <i class="fas fa-plus"></i> Add
+                <font-awesome-icon icon="plus" /> Add
               </button>
             </div>
             <div v-if="emailError" class="text-red-500 text-sm mb-2">{{ emailError }}</div>
@@ -64,6 +81,23 @@
                 <span>{{ email }}</span>
                 <button type="button" @click="removeUserEmail(index)" class="remove-user-btn">
                   &times;
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- add the list assigned users -->
+          <div class="grid gap-2">
+            <div v-for="user in assignedUsers" :key="user.id" :id="user.id" class="user-card">
+              <div class="relative flex gap-2 items-center">
+                <img :src="user.avatar_url == null ? 'public/default.jpg' : user.avatar_url" alt="User Avatar" class="user-avatar rounded-full w-12">
+                <div class="user-details">
+                  <h3 class="font-semibold">{{ user.username }}</h3>
+                  <p class="text-sm text-gray-500">{{ user.email }}</p>
+                </div>
+                <button type="button" @click="removeUser(user.id)"
+                  class="absolute top-1/2 -translate-y-1/2 right-4 hover:bg-slate-200 w-8 h-8 rounded-full">
+                  <font-awesome-icon icon="trash" style="color: red;" />
                 </button>
               </div>
             </div>
@@ -108,8 +142,10 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { supabase } from '../../utils/supabase';
-import { getProjects, createProject, updateProject, deleteProject as deleteProjectService } from "../../services/projectService";
+import { getProjects, createProject, updateProject, deleteProject as deleteProjectService, listAssignedUsers, getInvitedProjects } from "../../services/projectService";
 import { toast } from 'vue-sonner';
+import type { UserProfile } from '../../services/authService';
+import type { Project } from '@/types/project.type';
 
 // Props and emits
 const emit = defineEmits(['close', 'select']);
@@ -117,7 +153,7 @@ const emit = defineEmits(['close', 'select']);
 // Component state
 const router = useRouter();
 const route = useRoute();
-const projects = ref<any[]>([]);
+const projects = ref<Project[]>([]);
 const loading = ref(true);
 const errorMessage = ref('');
 const isSubmitting = ref(false);
@@ -126,6 +162,9 @@ const isEditMode = ref(false);
 const isAddMode = ref(false);
 const showDeleteConfirm = ref(false);
 const projectToDelete = ref<any>(null);
+const assignedUsers = ref<UserProfile[]>([]);
+const selectedRemovedUserIds = ref<string[]>([]);
+const projectInvited = ref<Project[]>([]);
 
 // Form state
 const projectForm = ref({
@@ -154,6 +193,10 @@ onMounted(async () => {
     // Otherwise select first project by default
     selectedProjectId.value = projects.value[0].id;
   }
+
+  await loadInvitedProjects();
+
+  console.log("projectInvited", projectInvited.value);
 });
 
 // Methods
@@ -164,6 +207,19 @@ async function loadProjects() {
     projects.value = await getProjects();
   } catch (error: any) {
     errorMessage.value = error.message || 'Failed to load projects';
+  } finally {
+    loading.value = false;
+  }
+}
+
+// load invited projects
+async function loadInvitedProjects() {
+  try {
+    loading.value = true;
+    errorMessage.value = '';
+    projectInvited.value = await getInvitedProjects();
+  } catch (error: any) {
+    errorMessage.value = error.message || 'Failed to load invited projects';
   } finally {
     loading.value = false;
   }
@@ -217,6 +273,8 @@ async function editProject(project: any) {
     name: project.name,
     userEmails: userEmails
   };
+
+  loadAssignedUsers(project.id)
 
   isEditMode.value = true;
   isAddMode.value = false;
@@ -293,7 +351,6 @@ async function saveProject() {
         description: errorMsg,
         duration: 5000
       });
-      throw new Error(errorMsg);
     }
 
     if (isEditMode.value) {
@@ -308,16 +365,16 @@ async function saveProject() {
         projects.value[index] = project;
       }
 
-      // 4. Handle user assignments - first remove all existing users
-      const { error: deleteError } = await supabase
-        .from('project_has_users')
-        .delete()
-        .eq('project_id', project.id);
+      // // 4. Handle user assignments - first remove all existing users
+      // const { error: deleteError } = await supabase
+      //   .from('project_has_users')
+      //   .delete()
+      //   .eq('project_id', project.id);
 
-      if (deleteError) {
-        console.error('Error removing project users:', deleteError);
-        throw new Error('Failed to update project users');
-      }
+      // if (deleteError) {
+      //   console.error('Error removing project users:', deleteError);
+      //   throw new Error('Failed to update project users');
+      // }
     } else {
       // Add new project
       project = await createProject({
@@ -343,6 +400,19 @@ async function saveProject() {
       if (insertError) {
         console.error('Error adding project users:', insertError);
         throw new Error('Failed to add users to project');
+      }
+    }
+
+    // 6. Remove users from project
+    if (selectedRemovedUserIds.value.length > 0) {
+      const { error: deleteError } = await supabase
+        .from('project_has_users')
+        .delete()
+        .in('user_id', selectedRemovedUserIds.value);
+
+      if (deleteError) {
+        console.error('Error removing project users:', deleteError);
+        throw new Error('Failed to remove users from project');
       }
     }
 
@@ -412,6 +482,32 @@ async function deleteProject() {
     isSubmitting.value = false;
   }
 }
+
+async function loadAssignedUsers(projectId: string) {
+  try {
+    loading.value = true;
+    errorMessage.value = '';
+    console.log("projectId", projectId);
+    assignedUsers.value = await listAssignedUsers(projectId);
+
+    console.log("assignedUsers", assignedUsers.value);
+
+  } catch (error: any) {
+    errorMessage.value = error.message || 'Failed to load assigned users';
+  } finally {
+    loading.value = false;
+  }
+}
+
+function removeUser(userId: string) {
+  selectedRemovedUserIds.value.push(userId);
+
+  // remove element with id = userId
+  assignedUsers.value = assignedUsers.value.filter(user => user.id !== userId);
+
+}
+
+
 </script>
 
 <style scoped>
