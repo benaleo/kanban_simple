@@ -2,18 +2,7 @@ import { toast } from 'vue-sonner';
 import { supabase } from '../utils/supabase';
 import { v4 as uuidv4 } from 'uuid';
 import { useRouter } from 'vue-router';
-
-// Define Task interface
-export interface Task {
-  id: string;
-  title: string;
-  description: string;
-  status: string;
-  created_at: Date;
-  start_task?: Date | null;
-  end_task?: Date | null;
-  project_id: string;
-}
+import type { Task } from '@/types/kanban.type';
 
 // Table name in Supabase
 const TASKS_TABLE = 'tasks';

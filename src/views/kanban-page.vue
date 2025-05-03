@@ -206,13 +206,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, computed, watch, onUnmounted } from 'vue'
 import moment from 'moment-timezone'
 import { useRoute, useRouter } from 'vue-router'
 import AuthLayout from '../layouts/AuthLayout.vue'
 // External modules
 // Import Supabase Kanban service
-import type { Task as SupabaseTask } from '../../services/kanbanService'
 import { createTask, getTasks, updateTask as updateTaskService, deleteTask, updateTaskStatus } from '../../services/kanbanService'
 import { supabase } from '../../utils/supabase'
 
@@ -225,45 +224,12 @@ import { Vue3Lottie } from 'vue3-lottie'
 import LoadingJSON from "../assets/html/loading.json"
 import ProjectDialog from '@/components/ProjectDialog.vue'
 import ColumnDialog from '@/components/ColumnDialog.vue'
-
-// Define types
-interface Column {
-  id: string
-  name: string
-  project_id: string
-  created_at: Date
-  order: number
-}
-
-interface DragItem {
-  task: SupabaseTask
-  fromColumnId: string
-}
-
-interface NewTask {
-  title: string
-  description: string
-  status: string
-  project_id: string
-}
-
-interface EditingTask extends NewTask {
-  id: string
-  title: string
-  description: string
-  status: string
-  start_task?: string
-  end_task?: string
-  start_task_date?: string
-  start_task_time?: string
-  end_task_date?: string
-  end_task_time?: string
-  assignedUsers: { id: string, email: string }[]
-}
+import type { Column, EditingTask, NewTask, Task } from '@/types/kanban.type'
+import { realtimeTask } from '@/composables/useRealtimeTask'
 
 // Global state
 const columns = ref<Column[]>([])
-const tasks = ref<SupabaseTask[]>([])
+const tasks = ref<Task[]>([])
 const loading = ref(false)
 const errorMessage = ref<string>('')
 
@@ -422,8 +388,8 @@ watch(() => currentProjectId.value, (newProjectId) => {
 })
 
 // Get tasks for a specific column
-const tasksInColumn = (columnId: string): SupabaseTask[] => {
-  return tasks.value.filter((task) => task.status === columnId)
+const tasksInColumn = (columnId: string): Task[] => {
+  return tasks.value.filter((task: Task) => task.status === columnId)
 }
 
 // Fetch tasks from Supabase
@@ -435,6 +401,9 @@ const fetchTasks = async () => {
     // Only fetch tasks if a project is selected
     if (currentProjectId.value) {
       tasks.value = await getTasks(currentProjectId.value)
+
+      // Setup real-time subscription after initial fetch
+      setupRealtimeSubscriptions()
     } else {
       tasks.value = []
     }
@@ -455,9 +424,13 @@ watch(() => currentProjectId.value, (newProjectId) => {
   if (newProjectId) {
     fetchTasks()
     loadColumns()
+    // Update the project_id in the newTask object
+    newTask.value.project_id = newProjectId
   } else {
     // If no project selected, show the project dialog
     showNoProjectDialog.value = true
+    // Clean up any existing subscriptions
+    removeRealtimeSubscriptions()
   }
 })
 
@@ -584,6 +557,115 @@ const removeTask = async (taskId: string) => {
 }
 
 // Lifecycle hooks
+// Track active subscriptions
+const taskSubscription = ref<any>(null)
+const columnSubscription = ref<any>(null)
+
+// Set up real-time subscriptions
+// const setupRealtimeSubscriptions = () => {
+//   // Clean up any existing subscriptions first
+//   removeRealtimeSubscriptions()
+
+//   console.log('Setting up real-time subscriptions for project:', currentProjectId.value)
+
+//   // Subscribe to tasks table changes for the current project
+//   taskSubscription.value = supabase
+//     .channel('task-changes')
+//     .on('postgres_changes', {
+//       event: '*', // Listen for all events (INSERT, UPDATE, DELETE)
+//       schema: 'public',
+//       table: 'tasks',
+//       filter: `project_id=eq.${currentProjectId.value}`
+//     }, async (payload) => {
+//       console.log('Task change received:', payload)
+
+//       // Handle different event types
+//       if (payload.eventType === 'INSERT') {
+//         const newTask = payload.new as Task
+//         // Only add if not already in our array
+//         if (!tasks.value.some(task => task.id === newTask.id)) {
+//           tasks.value.push(newTask)
+//         }
+//       } else if (payload.eventType === 'UPDATE') {
+//         const updatedTask = payload.new as Task
+//         const index = tasks.value.findIndex(task => task.id === updatedTask.id)
+
+//         if (index !== -1) {
+//           // Preserve any local state that might not be in the database record
+//           tasks.value[index] = {
+//             ...tasks.value[index],
+//             ...updatedTask
+//           }
+//         }
+//       } else if (payload.eventType === 'DELETE') {
+//         const deletedTaskId = payload.old.id
+//         const index = tasks.value.findIndex(task => task.id === deletedTaskId)
+
+//         if (index !== -1) {
+//           tasks.value.splice(index, 1)
+//         }
+//       }
+//     })
+//     .subscribe()
+
+//   // Subscribe to columns table changes for the current project
+//   columnSubscription.value = supabase
+//     .channel('column-changes')
+//     .on('postgres_changes', {
+//       event: '*', // Listen for all events
+//       schema: 'public',
+//       table: 'columns',
+//       filter: `project_id=eq.${currentProjectId.value}`
+//     }, async (payload) => {
+//       console.log('Column change received:', payload)
+
+//       // Handle different event types
+//       if (payload.eventType === 'INSERT') {
+//         const newColumn = payload.new as Column
+//         // Only add if not already in our array
+//         if (!columns.value.some(column => column.id === newColumn.id)) {
+//           columns.value.push(newColumn)
+//           // Sort columns by order
+//           columns.value.sort((a, b) => a.order - b.order)
+//         }
+//       } else if (payload.eventType === 'UPDATE') {
+//         const updatedColumn = payload.new as Column
+//         const index = columns.value.findIndex(column => column.id === updatedColumn.id)
+
+//         if (index !== -1) {
+//           columns.value[index] = updatedColumn
+//           // Sort columns by order in case order was changed
+//           columns.value.sort((a, b) => a.order - b.order)
+//         }
+//       } else if (payload.eventType === 'DELETE') {
+//         const deletedColumnId = payload.old.id
+//         const index = columns.value.findIndex(column => column.id === deletedColumnId)
+
+//         if (index !== -1) {
+//           columns.value.splice(index, 1)
+//         }
+//       }
+//     })
+//     .subscribe()
+// }
+
+const setupRealtimeSubscriptions = () => {
+  realtimeTask(currentProjectId.value, tasks, columns, supabase, removeRealtimeSubscriptions)
+}
+
+// Clean up subscriptions to prevent memory leaks
+const removeRealtimeSubscriptions = () => {
+  if (taskSubscription.value) {
+    supabase.removeChannel(taskSubscription.value)
+    taskSubscription.value = null
+  }
+
+  if (columnSubscription.value) {
+    supabase.removeChannel(columnSubscription.value)
+    columnSubscription.value = null
+  }
+}
+
 onMounted(async () => {
   // Check if project ID exists
   if (currentProjectId.value) {
@@ -593,6 +675,11 @@ onMounted(async () => {
     // If no project ID, show project dialog
     showNoProjectDialog.value = true
   }
+})
+
+// Clean up subscriptions when component is unmounted
+onUnmounted(() => {
+  removeRealtimeSubscriptions()
 })
 
 // Method to open column management dialog
@@ -657,7 +744,7 @@ const onDrop = async (event: DragEvent, targetColumnId: string): Promise<void> =
 }
 
 // Handle drag start for Kanban drag-and-drop
-const onDragStart = (event: DragEvent, task: SupabaseTask, columnId: string): void => {
+const onDragStart = (event: DragEvent, task: Task, columnId: string): void => {
   if (event.dataTransfer) {
     // Set data on drag event
     event.dataTransfer.effectAllowed = 'move'
@@ -680,7 +767,7 @@ const formatDate = (date: Date): string => {
 }
 
 // Open edit modal with task data
-const openEditModal = async (task: SupabaseTask) => {
+const openEditModal = async (task: Task) => {
   // Prevent opening modal when dragging
   if (draggedTaskId.value) return
 
