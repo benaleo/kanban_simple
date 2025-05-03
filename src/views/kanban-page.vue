@@ -561,93 +561,17 @@ const removeTask = async (taskId: string) => {
 const taskSubscription = ref<any>(null)
 const columnSubscription = ref<any>(null)
 
-// Set up real-time subscriptions
-// const setupRealtimeSubscriptions = () => {
-//   // Clean up any existing subscriptions first
-//   removeRealtimeSubscriptions()
+// Task change event handler reference
+const taskChangeHandler = (e: Event) => {
+  console.log('Task change event received:', (e as CustomEvent).detail)
+  fetchTasks()
+}
 
-//   console.log('Setting up real-time subscriptions for project:', currentProjectId.value)
-
-//   // Subscribe to tasks table changes for the current project
-//   taskSubscription.value = supabase
-//     .channel('task-changes')
-//     .on('postgres_changes', {
-//       event: '*', // Listen for all events (INSERT, UPDATE, DELETE)
-//       schema: 'public',
-//       table: 'tasks',
-//       filter: `project_id=eq.${currentProjectId.value}`
-//     }, async (payload) => {
-//       console.log('Task change received:', payload)
-
-//       // Handle different event types
-//       if (payload.eventType === 'INSERT') {
-//         const newTask = payload.new as Task
-//         // Only add if not already in our array
-//         if (!tasks.value.some(task => task.id === newTask.id)) {
-//           tasks.value.push(newTask)
-//         }
-//       } else if (payload.eventType === 'UPDATE') {
-//         const updatedTask = payload.new as Task
-//         const index = tasks.value.findIndex(task => task.id === updatedTask.id)
-
-//         if (index !== -1) {
-//           // Preserve any local state that might not be in the database record
-//           tasks.value[index] = {
-//             ...tasks.value[index],
-//             ...updatedTask
-//           }
-//         }
-//       } else if (payload.eventType === 'DELETE') {
-//         const deletedTaskId = payload.old.id
-//         const index = tasks.value.findIndex(task => task.id === deletedTaskId)
-
-//         if (index !== -1) {
-//           tasks.value.splice(index, 1)
-//         }
-//       }
-//     })
-//     .subscribe()
-
-//   // Subscribe to columns table changes for the current project
-//   columnSubscription.value = supabase
-//     .channel('column-changes')
-//     .on('postgres_changes', {
-//       event: '*', // Listen for all events
-//       schema: 'public',
-//       table: 'columns',
-//       filter: `project_id=eq.${currentProjectId.value}`
-//     }, async (payload) => {
-//       console.log('Column change received:', payload)
-
-//       // Handle different event types
-//       if (payload.eventType === 'INSERT') {
-//         const newColumn = payload.new as Column
-//         // Only add if not already in our array
-//         if (!columns.value.some(column => column.id === newColumn.id)) {
-//           columns.value.push(newColumn)
-//           // Sort columns by order
-//           columns.value.sort((a, b) => a.order - b.order)
-//         }
-//       } else if (payload.eventType === 'UPDATE') {
-//         const updatedColumn = payload.new as Column
-//         const index = columns.value.findIndex(column => column.id === updatedColumn.id)
-
-//         if (index !== -1) {
-//           columns.value[index] = updatedColumn
-//           // Sort columns by order in case order was changed
-//           columns.value.sort((a, b) => a.order - b.order)
-//         }
-//       } else if (payload.eventType === 'DELETE') {
-//         const deletedColumnId = payload.old.id
-//         const index = columns.value.findIndex(column => column.id === deletedColumnId)
-
-//         if (index !== -1) {
-//           columns.value.splice(index, 1)
-//         }
-//       }
-//     })
-//     .subscribe()
-// }
+// Column change event handler reference
+const columnChangeHandler = (e: Event) => {
+  console.log('Column change event received:', (e as CustomEvent).detail)
+  loadColumns()
+}
 
 const setupRealtimeSubscriptions = () => {
   realtimeTask(currentProjectId.value, tasks, columns, supabase, removeRealtimeSubscriptions)
@@ -671,7 +595,14 @@ onMounted(async () => {
   if (currentProjectId.value) {
     fetchTasks()
     loadColumns()
-  } else {
+    
+    // Add event listener for column changes from other users
+    window.addEventListener('column-change', columnChangeHandler)
+
+    // Add event listener for task changes from other users
+    window.addEventListener('task-change', taskChangeHandler)
+    
+    } else {
     // If no project ID, show project dialog
     showNoProjectDialog.value = true
   }
@@ -680,6 +611,12 @@ onMounted(async () => {
 // Clean up subscriptions when component is unmounted
 onUnmounted(() => {
   removeRealtimeSubscriptions()
+
+  // Remove task change event listener
+  window.removeEventListener('task-change', taskChangeHandler)
+  
+  // Remove column change event listener
+  window.removeEventListener('column-change', columnChangeHandler)
 })
 
 // Method to open column management dialog

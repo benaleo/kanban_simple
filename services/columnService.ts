@@ -28,6 +28,7 @@ export const getColumns = async (projectId: string): Promise<Column[]> => {
     .from(COLUMNS_TABLE)
     .select('*')
     .eq('project_id', projectId)
+    .eq('is_deleted', false)
     .order('order', { ascending: true });
 
   if (error) {
@@ -130,7 +131,7 @@ export const deleteColumn = async (columnId: string): Promise<void> => {
   // Then delete the column
   const { error } = await supabase
     .from(COLUMNS_TABLE)
-    .delete()
+    .update({ is_deleted: true })
     .eq('id', columnId);
 
   if (error) {

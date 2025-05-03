@@ -23,7 +23,6 @@ export const getTasks = async (projectId?: string): Promise<Task[]> => {
   }
 
   // is owner project
-  console.log("running check project")
   const { data: projectData } = await supabase
     .from(PROJECTS_TABLE)
     .select('*')
@@ -33,7 +32,6 @@ export const getTasks = async (projectId?: string): Promise<Task[]> => {
   const isOwner = projectData.user_id === userData.user.id;
 
   // is invited user in project
-  console.log("running check invited")
   const { data: projectUserData } = await supabase
     .from(PROJECT_USERS_TABLE)
     .select('*')
@@ -42,7 +40,6 @@ export const getTasks = async (projectId?: string): Promise<Task[]> => {
     .single();
 
   const isInvited = projectUserData !== null;
-  console.log("isOwner", isOwner);
   console.log("isInvited", isInvited);
 
   if (!isOwner && !isInvited) {
@@ -53,6 +50,7 @@ export const getTasks = async (projectId?: string): Promise<Task[]> => {
   let query = supabase
     .from(TASKS_TABLE)
     .select('*')
+    .eq('is_deleted', false)
     .order('created_at', { ascending: false });
 
   // Filter by project_id if provided
@@ -129,7 +127,7 @@ export const updateTask = async (taskId: string, updates: Partial<Omit<Task, 'id
 export const deleteTask = async (taskId: string): Promise<void> => {
   const { error } = await supabase
     .from(TASKS_TABLE)
-    .delete()
+    .update({ is_deleted: true })
     .eq('id', taskId);
 
   if (error) {
