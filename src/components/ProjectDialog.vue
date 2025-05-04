@@ -51,12 +51,25 @@
                 <h4 class="project-name">{{ project.name }}</h4>
 
                 <div class="project-actions">
-                  <div class="flex items-center">
-                    <div class="tooltip" v-for="user in project.project_invited">
-                      <img :src="user.avatar_url == null ? 'public/default.jpg' : user.avatar_url" alt="User Avatar"
+                  <div class="flex items-center gap-1">
+                    <div class="tooltip" v-for="(user, index) in project.project_invited.slice(0, 3)" :key="user.username">
+                      <img v-if="user.avatar_url" :src="user.avatar_url" alt="User Avatar"
                         class="user-avatar rounded-full w-6">
+
+                        <font-awesome-icon v-if="!user.avatar_url" icon="circle-user" size="xl" />
                       <div class="tooltiptext">
                         <h3 class="font-semibold">{{ user.username }}</h3>
+                      </div>
+                    </div>
+                    <div v-if="project.project_invited.length > 3" class="tooltip">
+                      +{{ project.project_invited.length - 3 }} more
+                      <div class="tooltiptext">
+                        <div v-for="user in project.project_invited.slice(3)" :key="user.username" class="flex items-center gap-1 px-2 py-1">
+                          <img v-if="user.avatar_url" :src="user.avatar_url" alt="User Avatar"
+                            class="user-avatar rounded-full w-6">
+                          <font-awesome-icon v-if="!user.avatar_url" icon="circle-user" size="xl" />
+                          <h3 class="font-semibold">{{ user.username }}</h3>
+                        </div>
                       </div>
                     </div>
                   </div>
