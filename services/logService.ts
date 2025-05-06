@@ -93,7 +93,7 @@ export const logAction = async (
   const userData : User | null = await getCurrentUser();
 
   return createLog({
-    user_id: userData?.id,
+    user_id: userData?.id || '',
     user_email: userData?.email || '',
     entity_id: entityId,
     entity,
