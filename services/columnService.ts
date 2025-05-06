@@ -46,7 +46,7 @@ export const createColumn = async (
   projectId: string, 
   columnData: { name: string, order?: number }
 ): Promise<Column> => {
-w  // Get max order to place new column at the end if not specified
+  // Get max order to place new column at the end if not specified
   let order = columnData.order;
   if (order === undefined) {
     const { data: maxOrderData, error: maxOrderError } = await supabase

@@ -1,5 +1,6 @@
 import { supabase } from '../utils/supabase';
 import type { User } from '@supabase/supabase-js';
+import { useRouter } from 'vue-router';
 
 // Define user profile interface
 export interface UserProfile {
@@ -101,6 +102,8 @@ export const logoutUser = async (): Promise<void> => {
  * Get the current user
  */
 export const getCurrentUser = async (): Promise<User | null> => {
+  const router = useRouter();
+  
   const { data } = await supabase.auth.getUser();
   if (!data.user) {
     router.push('/login');
