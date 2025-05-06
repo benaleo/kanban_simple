@@ -188,15 +188,15 @@ import { useRouter, useRoute } from 'vue-router';
 import { supabase } from '../../utils/supabase';
 import { getProjects, createProject, updateProject, deleteProject as deleteProjectService, listAssignedUsers, getInvitedProjects, leaveProjectService } from "../../services/projectService";
 import { toast } from 'vue-sonner';
-import type { UserProfile } from '../../services/authService';
+import type { UserProfile, removeSession } from '../../services/authService';
 import type { Project, ProjectList } from '@/types/project.type';
 
 // Props and emits
 const emit = defineEmits(['close', 'select']);
 
 // Component state
-const router = useRouter();
 const route = useRoute();
+const router = useRouter();
 const projects = ref<Project[]>([]);
 const loading = ref(true);
 const errorMessage = ref('');
@@ -547,7 +547,10 @@ function cancelLeave() {
 async function leaveProject() {
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) {
-    throw new Error('User not authenticated');
+    router.push('/login');
+    // remove session
+    removeSession();
+    return;
   }
   if (!projectToDelete.value) return;
 

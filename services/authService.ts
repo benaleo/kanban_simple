@@ -120,6 +120,18 @@ export const getSession = async () => {
 };
 
 /**
+ * Remove the current user's session on browser
+ */
+export const removeSession = async () => {
+  const { error } = await supabase.auth.signOut();
+  
+  if (error) {
+    console.error('Error removing session:', error);
+    throw error;
+  }
+};
+
+/**
  * Get the user profile
  */
 export const getUserProfile = async (userId: string): Promise<UserProfile> => {

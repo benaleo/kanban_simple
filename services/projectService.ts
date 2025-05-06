@@ -1,7 +1,7 @@
 import type { User } from '@supabase/supabase-js';
 import { supabase } from '../utils/supabase';
 import { v4 as uuidv4 } from 'uuid';
-import type { getUserProfile, UserProfile } from './authService';
+import type { getUserProfile, UserProfile, removeSession } from './authService';
 import type { Project, ProjectList } from '@/types/project.type';
 
 // Define Project interface
@@ -19,7 +19,10 @@ export const getProjects = async (): Promise<Project[]> => {
   // Get current user
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) {
-    throw new Error('User not authenticated');
+    router.push('/login');
+    // remove session
+    removeSession();
+    return;
   }
 
   const { data, error } = await supabase
@@ -67,7 +70,10 @@ export const getProjectById = async (projectId: string): Promise<Project> => {
 export const getInvitedProjects = async (): Promise<ProjectList[]> => {
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) {
-    throw new Error('User not authenticated');
+    router.push('/login');
+    // remove session
+    removeSession();
+    return;
   }
 
   // Get projects where the current user is invited
@@ -168,7 +174,10 @@ export const createProject = async (projectData: { name: string }): Promise<Proj
   // Get current user
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) {
-    throw new Error('User not authenticated');
+    router.push('/login');
+    // remove session
+    removeSession();
+    return;
   }
 
   const newProject = {

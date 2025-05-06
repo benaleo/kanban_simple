@@ -21,7 +21,10 @@ const router = useRouter();
 export const getTasks = async (projectId?: string): Promise<Task[]> => {
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) {
-    throw new Error('User not authenticated');
+    router.push('/login');
+    // remove session
+    removeSession();
+    return;
   }
 
   // is owner project

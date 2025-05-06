@@ -21,7 +21,10 @@ export const getColumns = async (projectId: string): Promise<Column[]> => {
   // Get current user
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) {
-    throw new Error('User not authenticated');
+    router.push('/login');
+    // remove session
+    removeSession();
+    return;
   }
 
   const { data, error } = await supabase
@@ -53,7 +56,10 @@ export const createColumn = async (
   // Get current user
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) {
-    throw new Error('User not authenticated');
+    router.push('/login');
+    // remove session
+    removeSession();
+    return;
   }
 
   // Get max order to place new column at the end if not specified
