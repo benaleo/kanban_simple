@@ -90,11 +90,11 @@ export const logAction = async (
   action: string,
   metadata?: Record<string, unknown>
 ): Promise<LogEntry> => {
-  const userData : User = await getCurrentUser();
+  const userData : User | null = await getCurrentUser();
 
   return createLog({
-    user_id: userData.id,
-    user_email: userData.email || '',
+    user_id: userData?.id,
+    user_email: userData?.email || '',
     entity_id: entityId,
     entity,
     action,

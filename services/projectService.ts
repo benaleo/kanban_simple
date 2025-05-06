@@ -5,7 +5,6 @@ import type { getUserProfile, UserProfile, removeSession } from './authService';
 import type { Project, ProjectList } from '@/types/project.type';
 import { getCurrentUser } from './authService';
 import { useRouter } from 'vue-router';
-import type { User } from '@supabase/supabase-js';
 
 // Define Project interface
 
@@ -20,12 +19,12 @@ const PROFILES_TABLE = 'profiles';
  */
 export const getProjects = async (): Promise<Project[]> => {
   // Get current user
-  const userData : User = await getCurrentUser();
+  const userData : User | null = await getCurrentUser();
 
   const { data, error } = await supabase
     .from(PROJECTS_TABLE)
     .select('*')
-    .eq('user_id', userData.id)
+    .eq('user_id', userData?.id)
     .order('created_at', { ascending: true });
 
   if (error) {
@@ -65,13 +64,13 @@ export const getProjectById = async (projectId: string): Promise<Project> => {
  * Get invited projects
  */
 export const getInvitedProjects = async (): Promise<ProjectList[]> => {
-  const userData : User = await getCurrentUser();
+  const userData : User | null = await getCurrentUser();
 
   // Get projects where the current user is invited
   const { data: projectUsers, error: projectUsersError } = await supabase
     .from(PROJECT_USERS_TABLE)
     .select('*')
-    .eq('user_id', userData.id)
+    .eq('user_id', userData?.id)
     .order('id', { ascending: true });
 
   if (projectUsersError) {
@@ -163,12 +162,12 @@ export const getInvitedProjects = async (): Promise<ProjectList[]> => {
  */
 export const createProject = async (projectData: { name: string }): Promise<Project> => {
   // Get current user
-  const userData : User = await getCurrentUser();
+  const userData : User | null = await getCurrentUser();
 
   const newProject = {
     id: uuidv4(),
     name: projectData.name,
-    user_id: userData.id,
+    user_id: userData?.id,
     created_at: new Date()
   };
 

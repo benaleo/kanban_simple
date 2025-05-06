@@ -41,7 +41,7 @@ export const getTasks = async (projectId?: string): Promise<Task[]> => {
     .eq('project_id', projectId)
     .eq('user_id', userData?.id);
 
-  const isInvited = projectUserData.length > 0;
+  const isInvited = projectUserData !== null && projectUserData.length > 0;
   console.log("isInvited", isInvited);
 
   if (!isOwner && !isInvited) {

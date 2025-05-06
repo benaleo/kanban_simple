@@ -118,10 +118,10 @@ export const realtimeTask = (
         filter: `project_id=eq.${currentProjectId}`,
       },
       async (payload: any) => {
-        const userData: User = await getCurrentUser()
+        const userData: User | null = await getCurrentUser()
 
         // Handle different event types
-        if (payload.eventType === 'INSERT' && payload.new.created_by !== userData.id) {
+        if (payload.eventType === 'INSERT' && payload.new.created_by !== userData?.id) {
           const newTask = payload.new as Task
           // Only add if not already in our array
           if (!tasks.value.some((task) => task.id === newTask.id)) {
