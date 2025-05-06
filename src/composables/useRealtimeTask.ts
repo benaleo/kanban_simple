@@ -118,7 +118,7 @@ export const realtimeTask = (
         filter: `project_id=eq.${currentProjectId}`,
       },
       async (payload: any) => {
-        const userData: User | null = await getCurrentUser()
+        const userData: User = await getCurrentUser()
 
         // Handle different event types
         if (payload.eventType === 'INSERT' && payload.new.created_by !== userData.id) {
