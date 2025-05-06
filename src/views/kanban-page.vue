@@ -125,7 +125,7 @@
               >
                 <div class="flex justify-between items-start mb-2">
                   <h4 class="text-white font-medium text-lg">{{ task.title }}</h4>
-                  <span class="text-xs text-white/70">{{ formatDate(task.created_at) }}</span>
+                  <span class="text-xs text-white/70 whitespace-nowrap">{{ formatDate(task.created_at) }}</span>
                 </div>
                 <p class="text-white/90 text-sm mb-2 line-clamp-2">{{ task.description }}</p>
                 <div class="flex justify-end mt-2">

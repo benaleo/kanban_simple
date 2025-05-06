@@ -1,5 +1,7 @@
 import { supabase } from '../utils/supabase';
 import { v4 as uuidv4 } from 'uuid';
+import { getCurrentUser } from './authService';
+import type { User } from '@supabase/supabase-js';
 
 // Define Column interface
 export interface Column {
@@ -18,15 +20,6 @@ const TASKS_TABLE = 'tasks';
  * Fetch all columns for a specific project
  */
 export const getColumns = async (projectId: string): Promise<Column[]> => {
-  // Get current user
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) {
-    router.push('/login');
-    // remove session
-    removeSession();
-    return;
-  }
-
   const { data, error } = await supabase
     .from(COLUMNS_TABLE)
     .select('*')
@@ -53,16 +46,7 @@ export const createColumn = async (
   projectId: string, 
   columnData: { name: string, order?: number }
 ): Promise<Column> => {
-  // Get current user
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) {
-    router.push('/login');
-    // remove session
-    removeSession();
-    return;
-  }
-
-  // Get max order to place new column at the end if not specified
+w  // Get max order to place new column at the end if not specified
   let order = columnData.order;
   if (order === undefined) {
     const { data: maxOrderData, error: maxOrderError } = await supabase

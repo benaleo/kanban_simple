@@ -102,6 +102,11 @@ export const logoutUser = async (): Promise<void> => {
  */
 export const getCurrentUser = async (): Promise<User | null> => {
   const { data } = await supabase.auth.getUser();
+  if (!data.user) {
+    router.push('/login');
+    removeSession();
+    return null;
+  }
   return data.user;
 };
 

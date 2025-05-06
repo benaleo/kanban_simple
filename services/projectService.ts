@@ -3,6 +3,7 @@ import { supabase } from '../utils/supabase';
 import { v4 as uuidv4 } from 'uuid';
 import type { getUserProfile, UserProfile, removeSession } from './authService';
 import type { Project, ProjectList } from '@/types/project.type';
+import { getCurrentUser } from './authService';
 
 // Define Project interface
 
@@ -17,18 +18,12 @@ const PROFILES_TABLE = 'profiles';
  */
 export const getProjects = async (): Promise<Project[]> => {
   // Get current user
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) {
-    router.push('/login');
-    // remove session
-    removeSession();
-    return;
-  }
+  const userData : User = await getCurrentUser();
 
   const { data, error } = await supabase
     .from(PROJECTS_TABLE)
     .select('*')
-    .eq('user_id', userData.user.id)
+    .eq('user_id', userData.id)
     .order('created_at', { ascending: true });
 
   if (error) {
@@ -68,19 +63,13 @@ export const getProjectById = async (projectId: string): Promise<Project> => {
  * Get invited projects
  */
 export const getInvitedProjects = async (): Promise<ProjectList[]> => {
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) {
-    router.push('/login');
-    // remove session
-    removeSession();
-    return;
-  }
+  const userData : User = await getCurrentUser();
 
   // Get projects where the current user is invited
   const { data: projectUsers, error: projectUsersError } = await supabase
     .from(PROJECT_USERS_TABLE)
     .select('*')
-    .eq('user_id', userData.user.id)
+    .eq('user_id', userData.id)
     .order('id', { ascending: true });
 
   if (projectUsersError) {
@@ -172,18 +161,12 @@ export const getInvitedProjects = async (): Promise<ProjectList[]> => {
  */
 export const createProject = async (projectData: { name: string }): Promise<Project> => {
   // Get current user
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) {
-    router.push('/login');
-    // remove session
-    removeSession();
-    return;
-  }
+  const userData : User = await getCurrentUser();
 
   const newProject = {
     id: uuidv4(),
     name: projectData.name,
-    user_id: userData.user.id,
+    user_id: userData.id,
     created_at: new Date()
   };
 
