@@ -132,7 +132,7 @@
       </div>
 
       <!-- Scrollable Content -->
-      <div class="overflow-y-auto p-6 flex-1">
+      <div class="overflow-y-auto p-6 flex-1 [&::-webkit-scrollbar-thumb]:bg-purple-600/80 [&::-webkit-scrollbar-track]:bg-white/10 [&::-webkit-scrollbar]:w-2 hover:[&::-webkit-scrollbar-thumb]:bg-purple-500 [&::-webkit-scrollbar-thumb]:rounded-full">
         <div class="flex flex-col gap-2">
           <div>
             <label class="block text-white text-sm font-medium mb-1">Title</label>
@@ -158,25 +158,23 @@
             </select>
           </div>
 
-          <div class="flex gap-2 items-start">
-            <div class="flex-1">
-              <label class="block text-white text-sm font-medium mb-1">Start Date & Time</label>
-              <div class="flex flex-col items-end gap-2">
-                <input type="date" v-model="editingTask.start_task_date"
-                  class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
-                <input type="time" v-model="editingTask.start_task_time"
-                  class="w-3/4 p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
-              </div>
+          <div>
+            <label class="block text-white text-sm font-medium mb-1">Start Date & Time</label>
+            <div class="flex flex-col items-end gap-2">
+              <input type="date" v-model="editingTask.start_task_date"
+                class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
+              <input type="time" v-model="editingTask.start_task_time"
+                class="w-3/4 p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
             </div>
+          </div>
 
-            <div class="flex-1">
-              <label class="block text-white text-sm font-medium mb-1">End Date & Time</label>
-              <div class="flex flex-col items-end gap-2">
-                <input type="date" v-model="editingTask.end_task_date"
-                  class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
-                <input type="time" v-model="editingTask.end_task_time"
-                  class="w-3/4 p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
-              </div>
+          <div>
+            <label class="block text-white text-sm font-medium mb-1">End Date & Time</label>
+            <div class="flex flex-col items-end gap-2">
+              <input type="date" v-model="editingTask.end_task_date"
+                class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
+              <input type="time" v-model="editingTask.end_task_time"
+                class="w-3/4 p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
             </div>
           </div>
 
