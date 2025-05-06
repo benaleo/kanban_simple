@@ -214,9 +214,7 @@
       <!-- Content -->
       <div class="grid gap-2 overflow-y-auto" :class="isTaskList ? 'grid-cols-2' : 'grid-cols-1'">
         <!-- Scrollable Content -->
-        <div
-          class="overflow-y-auto p-6 flex-1 [&::-webkit-scrollbar-thumb]:bg-purple-600/80 [&::-webkit-scrollbar-track]:bg-white/10 [&::-webkit-scrollbar]:w-2 hover:[&::-webkit-scrollbar-thumb]:bg-purple-500 [&::-webkit-scrollbar-thumb]:rounded-full"
-        >
+        <div class="overflow-y-auto p-6 flex-1 [&::-webkit-scrollbar-thumb]:bg-purple-600/80 [&::-webkit-scrollbar-track]:bg-white/10 [&::-webkit-scrollbar]:w-2 hover:[&::-webkit-scrollbar-thumb]:bg-purple-500 [&::-webkit-scrollbar-thumb]:rounded-full" >
           <div class="flex flex-col gap-2">
             <div>
               <label class="block text-white text-sm font-medium mb-1">Title</label>
@@ -329,122 +327,29 @@
           </div>
         </div>
         <!-- task list -->
-        <div
-          class="overflow-y-auto p-6 flex-1 [&::-webkit-scrollbar-thumb]:bg-purple-600/80 [&::-webkit-scrollbar-track]:bg-white/10 [&::-webkit-scrollbar]:w-2 hover:[&::-webkit-scrollbar-thumb]:bg-purple-500 [&::-webkit-scrollbar-thumb]:rounded-full"
-        >
-          <div class="flex flex-col gap-2">
-            <div>
-              <label class="block text-white text-sm font-medium mb-1">Title</label>
-              <input
-                v-model="editingTask.title"
-                class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-purple-500"
-              />
-            </div>
-
-            <div>
-              <label class="block text-white text-sm font-medium mb-1">Description</label>
-              <textarea
-                v-model="editingTask.description"
-                class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-purple-500 h-24"
-              ></textarea>
-            </div>
-
-            <div>
-              <label class="block text-white text-sm font-medium mb-1">Status</label>
-              <select
-                v-model="editingTask.status"
-                class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-              >
-                <option class="bg-black text-white border-red-200 rounded-lg" value="" disabled>
-                  Select a column
-                </option>
-                <option
-                  class="bg-black text-white border-red-200 rounded-lg"
-                  v-for="column in columns"
-                  :key="column.id"
-                  :value="column.id"
-                >
-                  {{ column.name }}
-                </option>
-              </select>
-            </div>
-
-            <div class="flex w-full items-center gap-2">
-              <div class="flex-1">
-                <label class="block text-white text-sm font-medium mb-1">Start Date & Time</label>
-                <div class="flex flex-col items-end gap-2">
-                  <input
-                    type="date"
-                    v-model="editingTask.start_task_date"
-                    class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  />
-                  <input
-                    type="time"
-                    v-model="editingTask.start_task_time"
-                    class="w-3/4 p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  />
-                </div>
-              </div>
-
-              <div class="flex-1">
-                <label class="block text-white text-sm font-medium mb-1">End Date & Time</label>
-                <div class="flex flex-col items-end gap-2">
-                  <input
-                    type="date"
-                    v-model="editingTask.end_task_date"
-                    class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  />
-                  <input
-                    type="time"
-                    v-model="editingTask.end_task_time"
-                    class="w-3/4 p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  />
-                </div>
-              </div>
-            </div>
-            <!-- Assigned Users -->
-            <div class="flex flex-col gap-2">
-              <label class="block text-white text-sm font-medium mb-1">Assign Users</label>
-              <div class="mb-2 flex flex-col gap-2">
-                <select
-                  v-model="selectedUserId"
-                  class="w-full p-3 rounded-lg bg-black backdrop-blur-sm border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                >
-                  <option value="" disabled>Select a user</option>
-                  <option v-for="user in availableUsers" :key="user.id" :value="user.id">
-                    {{ user.email }}
-                  </option>
-                </select>
-                <button
-                  @click="addUserToTask"
-                  class="self-end bg-white/20 hover:bg-white/30 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-                >
-                  Add User
-                </button>
-              </div>
-
-              <!-- Display Assigned Users -->
-              <div v-if="editingTask.assignedUsers.length > 0" class="mt-4 flex flex-wrap gap-2">
-                <div
-                  v-for="(user, index) in editingTask.assignedUsers"
-                  :key="user.id"
-                  class="flex items-center bg-white/20 rounded-lg px-3 py-1 text-white text-sm"
-                >
-                  <span>{{ user.email }}</span>
-                  <button
-                    @click="removeUserFromTask(index)"
-                    class="ml-2 text-red-300 hover:text-red-500"
-                  >
-                    &times;
-                  </button>
-                </div>
-              </div>
-              <div v-else class="text-white/50 text-sm italic mt-2">No users assigned</div>
-            </div>
+        <div v-if="isTaskList" class="overflow-y-auto p-6 flex-1 [&::-webkit-scrollbar-thumb]:bg-purple-600/80 [&::-webkit-scrollbar-track]:bg-white/10 [&::-webkit-scrollbar]:w-2 hover:[&::-webkit-scrollbar-thumb]:bg-purple-500 [&::-webkit-scrollbar-thumb]:rounded-full" >
+          <div v-if="loadingTaskLists" class="text-white/50 text-center">Loading todo items...</div>
+          <div v-else>
+            <TaskListItem 
+              v-for="item in taskLists" 
+              :key="item.id" 
+              :item="item"
+              @update="handleTaskListUpdate"
+              @delete="handleTaskListDelete"
+            />
+            
+            <button 
+              @click="addNewTaskListItem"
+              class="mt-4 flex items-center gap-2 text-white/70 hover:text-white transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+              </svg>
+              Add Todo Item
+            </button>
           </div>
         </div>
-      </div>
-
+      </div> 
       <!-- Footer -->
       <div
         class="sticky rounded-b-xl bottom-0 bg-white/10 backdrop-blur-sm p-6 pt-4 border-t border-white/20"
