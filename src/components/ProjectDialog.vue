@@ -116,8 +116,9 @@
           <div class="grid gap-2">
             <div v-for="user in assignedUsers" :key="user.id" :id="user.id" class="user-card">
               <div class="relative flex gap-2 items-center">
-                <img :src="user.avatar_url == null ? 'public/default.jpg' : user.avatar_url" alt="User Avatar"
+                <img v-if="user.avatar_url" :src="user.avatar_url" alt="User Avatar"
                   class="user-avatar rounded-full w-12">
+                <font-awesome-icon v-else icon="circle-user" size="2xl" />
                 <div class="user-details">
                   <h3 class="font-semibold">{{ user.username }}</h3>
                   <p class="text-sm text-gray-500">{{ user.email }}</p>
