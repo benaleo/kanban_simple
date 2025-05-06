@@ -5,13 +5,13 @@ export const getTaskLists = async (taskId: string) => {
     .from('task_list')
     .select('*')
     .eq('task_id', taskId)
-    .order('created_at', { ascending: true })
+    .order('ts', { ascending: true })
 
   if (error) throw error
   return data
 }
 
-export const createTaskListItem = async (taskId: string, name: string, is_checked: false) => {
+export const createTaskListItem = async (taskId: string, name: string, is_checked: boolean) => {
   const { data, error } = await supabase
     .from('task_list')
     .insert([{ task_id: taskId, name, is_checked }])

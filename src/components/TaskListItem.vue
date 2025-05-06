@@ -82,29 +82,33 @@ const addNewTaskListItem = async () => {
 
 <template>
   <div>
+    <h2 class="text-white font-semibold mb-4">Task List</h2>
+
     <div v-if="loadingTaskLists" class="text-white/50 text-center">Loading todo items...</div>
     <div v-else>
       <div 
         v-for="item in taskLists" 
         :key="item.id" 
-        class="flex items-center gap-2 mb-2"
+        class="flex justify-between items-center  gap-2 mb-2 min-w-[200px]"
       >
-        <input 
-          type="checkbox" 
-          v-model="item.is_checked" 
-          @change="() => handleUpdate(item)"
-          class="h-5 w-5 rounded border-white/30 bg-white/20"
-        />
-        
-        <input
-          v-if="!item.name"
-          v-model="item.name"
-          @blur="() => handleUpdate(item)"
-          @keyup.enter="() => handleUpdate(item)"
-          class="flex-1 bg-transparent border-b border-white/30 text-white focus:outline-none"
-          autofocus
-        />
-        <span v-else class="text-white">{{ item.name }}</span>
+        <div class="flex items-center gap-2">
+          <input 
+            type="checkbox" 
+            v-model="item.is_checked" 
+            @change="() => handleUpdate(item)"
+            class="h-5 w-5 rounded border-white/30 bg-white/20"
+          />
+          
+          <input
+            v-if="!item.name"
+            v-model="item.name"
+            @blur="() => handleUpdate(item)"
+            @keyup.enter="() => handleUpdate(item)"
+            class="flex-1 bg-transparent border-b border-white/30 text-white focus:outline-none"
+            autofocus
+          />
+          <span v-else class="text-white">{{ item.name }}</span>
+        </div>
         
         <button 
           @click="() => handleDelete(item)"

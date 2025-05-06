@@ -179,11 +179,11 @@
   <!-- Edit Task Modal -->
   <div
     v-if="isEditModalOpen"
-    class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 overflow-y-auto py-8"
+    class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-40 overflow-y-auto px-2 lg:px-12 py-8"
     @scroll.stop
   >
     <div
-    :class="isTaskList ? 'max-w-[70vw]' : 'max-w-[40vw]'"
+    :class="isTaskList ? 'w-[80vw] lg:max-w-[70vw]' : 'w-[80vw] lg:max-w-[40vw]'"
       class="bg-white/20 backdrop-blur-md rounded-xl p-0 shadow-xl border border-white/20 w-full mx-4 max-h-[calc(100vh-4rem)] flex flex-col"
     >
       <!-- Header -->
@@ -405,6 +405,7 @@ const tasks = ref<Task[]>([])
 const loading = ref(false)
 const errorMessage = ref<string>('')
 const isTaskList = ref<boolean>(false)
+const isMobile = ref<boolean>(false)
 
 // Store the currently dragged task
 const draggedTaskId = ref<string | null>(null)
