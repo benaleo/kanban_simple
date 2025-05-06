@@ -3,11 +3,13 @@ import { supabase } from '../utils/supabase';
 import { v4 as uuidv4 } from 'uuid';
 import { useRouter } from 'vue-router';
 import type { Task } from '@/types/kanban.type';
+import { logAction } from './logService';
 
 // Table name in Supabase
 const TASKS_TABLE = 'tasks';
 const PROJECT_USERS_TABLE = 'project_has_users';
 const PROJECTS_TABLE = 'projects';
+const LOGS_TABLE = 'logs';
 
 // Router
 const router = useRouter();
@@ -76,9 +78,13 @@ export const getTasks = async (projectId?: string): Promise<Task[]> => {
  * Create a new task in Supabase
  */
 export const createTask = async (task: Omit<Task, 'id' | 'created_at'>): Promise<Task> => {
+  // get user session data
+  const { data: userData } = await supabase.auth.getUser();
+  
   const newTask = {
     id: uuidv4(),
     ...task,
+    created_by: userData.user?.id || '',
     created_at: new Date()
   };
 
@@ -93,6 +99,9 @@ export const createTask = async (task: Omit<Task, 'id' | 'created_at'>): Promise
     throw error;
   }
 
+  // Log the creation
+  await logAction(newTask.id, 'task', 'create');
+
   return {
     ...data,
     created_at: new Date(data.created_at)
@@ -103,6 +112,13 @@ export const createTask = async (task: Omit<Task, 'id' | 'created_at'>): Promise
  * Update an existing task in Supabase
  */
 export const updateTask = async (taskId: string, updates: Partial<Omit<Task, 'id' | 'created_at'>>): Promise<Task> => {
+  // First get current task data
+  const { data: currentTask } = await supabase
+    .from(TASKS_TABLE)
+    .select('*')
+    .eq('id', taskId)
+    .single();
+
   const { data, error } = await supabase
     .from(TASKS_TABLE)
     .update(updates)
@@ -113,6 +129,21 @@ export const updateTask = async (taskId: string, updates: Partial<Omit<Task, 'id
   if (error) {
     console.error('Error updating task:', error);
     throw error;
+  }
+
+  // Only log if there are actual changes
+  if (currentTask) {
+    const changes = Object.entries(updates)
+      .filter(([key, value]) => currentTask[key] !== value)
+      .map(([key, value]) => ({
+        entity: key,
+        before: currentTask[key],
+        after: value
+      }));
+
+    if (changes.length > 0) {
+      await logAction(taskId, 'task', 'update', { changes });
+    }
   }
 
   return {
@@ -134,6 +165,9 @@ export const deleteTask = async (taskId: string): Promise<void> => {
     console.error('Error deleting task:', error);
     throw error;
   }
+
+  // Log the deletion
+  await logAction(taskId, 'task', 'delete');
 };
 
 /**
