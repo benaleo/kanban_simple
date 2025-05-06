@@ -554,7 +554,7 @@ async function leaveProject() {
     isSubmitting.value = true;
     errorMessage.value = '';
 
-    await leaveProjectService(projectToDelete.value.id, userData?.id);
+    await leaveProjectService(projectToDelete.value.id, userData?.id || '');
 
     // Remove from local array with id project.id
     projectInviteds.value = projectInviteds.value.filter(p => p.id !== projectToDelete.value?.id);
