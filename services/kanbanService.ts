@@ -21,7 +21,7 @@ const router = useRouter();
  * @param projectId Optional project ID to filter tasks
  */
 export const getTasks = async (projectId?: string): Promise<Task[]> => {
-  const userData : User = await getCurrentUser();
+  const userData : User | null = await getCurrentUser();
 
   // is owner project
   const { data: projectData } = await supabase
@@ -32,14 +32,14 @@ export const getTasks = async (projectId?: string): Promise<Task[]> => {
 
   console.log("project user id", projectData.user_id);
 
-  const isOwner = projectData.user_id === userData.id;
+  const isOwner = projectData.user_id === userData?.id;
 
   // is invited user in project
   const { data: projectUserData } = await supabase
     .from(PROJECT_USERS_TABLE)
     .select('*')
     .eq('project_id', projectId)
-    .eq('user_id', userData.id);
+    .eq('user_id', userData?.id);
 
   const isInvited = projectUserData.length > 0;
   console.log("isInvited", isInvited);
@@ -79,12 +79,12 @@ export const getTasks = async (projectId?: string): Promise<Task[]> => {
  */
 export const createTask = async (task: Omit<Task, 'id' | 'created_at'>): Promise<Task> => {
   // get user session data
-  const userData : User = await getCurrentUser();
+  const userData : User | null = await getCurrentUser();
   
   const newTask = {
     id: uuidv4(),
     ...task,
-    created_by: userData.id,
+    created_by: userData?.id,
     created_at: new Date()
   };
 
