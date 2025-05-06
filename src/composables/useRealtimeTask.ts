@@ -106,9 +106,11 @@ export const realtimeTask = (currentProjectId: string, tasks: Ref<Task[]>, colum
         filter: `project_id=eq.${currentProjectId}`
       }, async (payload : any) => {
         console.log('Task change received:', payload)
+        console.log('Current user ID:', supabase.auth.session()?.user.id)
+        console.log('New task created by:', payload.new.created_by)
   
         // Handle different event types
-        if (payload.eventType === 'INSERT') {
+        if (payload.eventType === 'INSERT' && payload.new.created_by !== supabase.auth.session()?.user.id) {
           const newTask = payload.new as Task
           // Only add if not already in our array
           if (!tasks.value.some(task => task.id === newTask.id)) {
