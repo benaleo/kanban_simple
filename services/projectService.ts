@@ -4,6 +4,8 @@ import { v4 as uuidv4 } from 'uuid';
 import type { getUserProfile, UserProfile, removeSession } from './authService';
 import type { Project, ProjectList } from '@/types/project.type';
 import { getCurrentUser } from './authService';
+import { useRouter } from 'vue-router';
+import type { User } from '@supabase/supabase-js';
 
 // Define Project interface
 

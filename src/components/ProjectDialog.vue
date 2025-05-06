@@ -188,8 +188,10 @@ import { useRouter, useRoute } from 'vue-router';
 import { supabase } from '../../utils/supabase';
 import { getProjects, createProject, updateProject, deleteProject as deleteProjectService, listAssignedUsers, getInvitedProjects, leaveProjectService } from "../../services/projectService";
 import { toast } from 'vue-sonner';
-import type { UserProfile, removeSession, getCurrentUser } from '../../services/authService';
+import type { UserProfile, removeSession } from '../../services/authService';
+import { getCurrentUser } from '../../services/authService';
 import type { Project, ProjectList } from '@/types/project.type';
+import type { User } from '@supabase/supabase-js';
 
 // Props and emits
 const emit = defineEmits(['close', 'select']);

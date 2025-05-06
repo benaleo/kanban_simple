@@ -5,6 +5,7 @@ import { useRouter } from 'vue-router';
 import type { Task } from '@/types/kanban.type';
 import { logAction } from './logService';
 import { getCurrentUser } from './authService';
+import type { User } from '@supabase/supabase-js';
 
 // Table name in Supabase
 const TASKS_TABLE = 'tasks';
