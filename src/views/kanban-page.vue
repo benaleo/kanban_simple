@@ -183,7 +183,7 @@
     @scroll.stop
   >
     <div
-      :class="!isTaskList ? 'max-w-[40vw]' : 'max-w-[60vw]'"
+    :class="isTaskList ? 'max-w-[70vw]' : 'max-w-[40vw]'"
       class="bg-white/20 backdrop-blur-md rounded-xl p-0 shadow-xl border border-white/20 w-full mx-4 max-h-[calc(100vh-4rem)] flex flex-col"
     >
       <!-- Header -->
@@ -328,26 +328,10 @@
         </div>
         <!-- task list -->
         <div v-if="isTaskList" class="overflow-y-auto p-6 flex-1 [&::-webkit-scrollbar-thumb]:bg-purple-600/80 [&::-webkit-scrollbar-track]:bg-white/10 [&::-webkit-scrollbar]:w-2 hover:[&::-webkit-scrollbar-thumb]:bg-purple-500 [&::-webkit-scrollbar-thumb]:rounded-full" >
-          <div v-if="loadingTaskLists" class="text-white/50 text-center">Loading todo items...</div>
-          <div v-else>
-            <TaskListItem 
-              v-for="item in taskLists" 
-              :key="item.id" 
-              :item="item"
-              @update="handleTaskListUpdate"
-              @delete="handleTaskListDelete"
-            />
-            
-            <button 
-              @click="addNewTaskListItem"
-              class="mt-4 flex items-center gap-2 text-white/70 hover:text-white transition-colors"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-              </svg>
-              Add Todo Item
-            </button>
-          </div>
+          <TaskListItem 
+            v-if="editingTask.id" 
+            :task_id="editingTask.id" 
+          />
         </div>
       </div> 
       <!-- Footer -->
@@ -356,9 +340,15 @@
       >
         <div class="flex justify-between gap-2">
           <div class="flex items-center gap-2">
-            <input type="checkbox" id="terms" @change="isTaskList = !isTaskList" />
-            <label for="terms">Show Task List</label>
+            <input
+            @change="isTaskList = !isTaskList"
+              type="checkbox"
+              id="show-task-list"
+              class="h-5 w-5 rounded border-white/30 bg-white/20"
+            />
+            <label for="show-task-list" class="text-white text-sm">Show Task List</label>
           </div>
+
           <div class="flex justify-end gap-2">
             <button
               @click="closeEditModal"
@@ -407,6 +397,7 @@ import ColumnDialog from '@/components/ColumnDialog.vue'
 import type { Column, EditingTask, NewTask, Task } from '@/types/kanban.type'
 import { realtimeTask } from '@/composables/useRealtimeTask'
 import DrawerDialog from '@/components/DrawerDialog.vue'
+import TaskListItem from '@/components/TaskListItem.vue'
 
 // Global state
 const columns = ref<Column[]>([])

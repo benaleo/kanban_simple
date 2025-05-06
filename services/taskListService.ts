@@ -11,10 +11,10 @@ export const getTaskLists = async (taskId: string) => {
   return data
 }
 
-export const createTaskListItem = async (taskId: string, name: string) => {
+export const createTaskListItem = async (taskId: string, name: string, is_checked: false) => {
   const { data, error } = await supabase
     .from('task_list')
-    .insert([{ task_id: taskId, name, is_checked: false }])
+    .insert([{ task_id: taskId, name, is_checked }])
     .select()
 
   if (error) throw error
