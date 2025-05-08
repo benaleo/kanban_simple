@@ -5,33 +5,23 @@
       :style="currentProjectId ? '' : 'position: fixed'"
     >
       <!-- Loading and error messages -->
-      <div
-        v-if="!currentProjectId"
-        class="fixed inset-0 w-full bg-purple-600/10 text-white p-2 text-center z-50"
-      >
+      <div v-if="!currentProjectId" class="fixed inset-0 w-full bg-purple-600/10 text-white p-2 text-center z-50" >
         <div class="w-full min-h-screen flex flex-col justify-start items-center">
           <div id="bounce-up">
             <font-awesome-icon icon="circle-chevron-up" class="mb-4" size="xl" />
             <div class="mb-40">Please select project above</div>
           </div>
-          <div
-            class="bg-white rounded-full fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
-          >
+          <div class="bg-white rounded-full fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" >
             <Vue3Lottie :animationData="LoadingJSON" :height="400" :width="400" />
           </div>
         </div>
       </div>
-      <div
-        v-if="errorMessage"
-        class="fixed top-0 left-0 w-full bg-red-600 text-white p-2 text-center z-50"
-      >
+      <div v-if="errorMessage" class="fixed top-0 left-0 w-full bg-red-600 text-white p-2 text-center z-50" >
         {{ errorMessage }}
       </div>
       <div v-if="currentProjectId" class="container flex flex-col gap-4">
         <!-- Task Creation Form -->
-        <div
-          class="flex flex-col gap-2 bg-white/10 backdrop-blur-md rounded-xl p-6 mb-8 shadow-xl border border-white/20"
-        >
+        <div class="flex flex-col gap-2 bg-white/10 backdrop-blur-md rounded-xl p-6 mb-8 shadow-xl border border-white/20" >
           <div class="flex justify-between items-center">
             <h2 class="text-2xl font-semibold text-white">Create New Task</h2>
             <div class="flex gap-2">
@@ -90,7 +80,7 @@
               </div>
               <button
                 @click="addTask"
-                class="mt-4 bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl"
+                class="mt-4 bg-galaxy"
               >
                 Create Task
               </button>
@@ -135,7 +125,7 @@
               >
                 <div class="flex justify-between items-start mb-2">
                   <h4 class="text-white font-medium text-lg">{{ task.title }}</h4>
-                  <span class="text-xs text-white/70">{{ formatDate(task.created_at) }}</span>
+                  <span class="text-xs text-white/70 whitespace-nowrap">{{ formatDate(task.created_at) }}</span>
                 </div>
                 <p class="text-white/90 text-sm mb-2 line-clamp-2">{{ task.description }}</p>
                 <div class="flex justify-end mt-2">

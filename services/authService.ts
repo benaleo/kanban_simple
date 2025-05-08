@@ -1,5 +1,6 @@
 import { supabase } from '../utils/supabase';
 import type { User } from '@supabase/supabase-js';
+import { useRouter } from 'vue-router';
 
 // Define user profile interface
 export interface UserProfile {
@@ -101,7 +102,14 @@ export const logoutUser = async (): Promise<void> => {
  * Get the current user
  */
 export const getCurrentUser = async (): Promise<User | null> => {
+  const router = useRouter();
+  
   const { data } = await supabase.auth.getUser();
+  if (!data.user) {
+    router.push('/login');
+    removeSession();
+    return null;
+  }
   return data.user;
 };
 
@@ -117,6 +125,18 @@ export const getSession = async () => {
   }
   
   return data.session;
+};
+
+/**
+ * Remove the current user's session on browser
+ */
+export const removeSession = async () => {
+  const { error } = await supabase.auth.signOut();
+  
+  if (error) {
+    console.error('Error removing session:', error);
+    throw error;
+  }
 };
 
 /**

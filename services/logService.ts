@@ -1,5 +1,6 @@
 import { supabase } from '../utils/supabase';
 import type { User } from '@supabase/supabase-js';
+import { getCurrentUser } from './authService';
 
 export interface LogEntry {
   id?: string;
@@ -89,15 +90,11 @@ export const logAction = async (
   action: string,
   metadata?: Record<string, unknown>
 ): Promise<LogEntry> => {
-  const { data: userData } = await supabase.auth.getUser();
-  
-  if (!userData.user) {
-    throw new Error('User not authenticated');
-  }
+  const userData : User | null = await getCurrentUser();
 
   return createLog({
-    user_id: userData.user.id,
-    user_email: userData.user.email || '',
+    user_id: userData?.id || '',
+    user_email: userData?.email || '',
     entity_id: entityId,
     entity,
     action,

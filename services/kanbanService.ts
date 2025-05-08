@@ -4,6 +4,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { useRouter } from 'vue-router';
 import type { Task } from '@/types/kanban.type';
 import { logAction } from './logService';
+import { getCurrentUser } from './authService';
+import type { User } from '@supabase/supabase-js';
 
 // Table name in Supabase
 const TASKS_TABLE = 'tasks';
@@ -19,10 +21,7 @@ const router = useRouter();
  * @param projectId Optional project ID to filter tasks
  */
 export const getTasks = async (projectId?: string): Promise<Task[]> => {
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) {
-    throw new Error('User not authenticated');
-  }
+  const userData : User | null = await getCurrentUser();
 
   // is owner project
   const { data: projectData } = await supabase
@@ -31,17 +30,18 @@ export const getTasks = async (projectId?: string): Promise<Task[]> => {
     .eq('id', projectId)
     .single();
 
-  const isOwner = projectData.user_id === userData.user.id;
+  console.log("project user id", projectData.user_id);
+
+  const isOwner = projectData.user_id === userData?.id;
 
   // is invited user in project
   const { data: projectUserData } = await supabase
     .from(PROJECT_USERS_TABLE)
     .select('*')
     .eq('project_id', projectId)
-    .eq('user_id', userData.user.id)
-    .single();
+    .eq('user_id', userData?.id);
 
-  const isInvited = projectUserData !== null;
+  const isInvited = projectUserData !== null && projectUserData.length > 0;
   console.log("isInvited", isInvited);
 
   if (!isOwner && !isInvited) {
@@ -51,7 +51,7 @@ export const getTasks = async (projectId?: string): Promise<Task[]> => {
 
   let query = supabase
     .from(TASKS_TABLE)
-    .select('*')
+    .select('id, title, description, status, created_at, project_id')
     .eq('is_deleted', false)
     .order('created_at', { ascending: false });
 
@@ -79,12 +79,12 @@ export const getTasks = async (projectId?: string): Promise<Task[]> => {
  */
 export const createTask = async (task: Omit<Task, 'id' | 'created_at'>): Promise<Task> => {
   // get user session data
-  const { data: userData } = await supabase.auth.getUser();
+  const userData : User | null = await getCurrentUser();
   
   const newTask = {
     id: uuidv4(),
     ...task,
-    created_by: userData.user?.id || '',
+    created_by: userData?.id,
     created_at: new Date()
   };
 

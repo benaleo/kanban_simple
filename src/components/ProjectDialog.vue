@@ -188,15 +188,17 @@ import { useRouter, useRoute } from 'vue-router';
 import { supabase } from '../../utils/supabase';
 import { getProjects, createProject, updateProject, deleteProject as deleteProjectService, listAssignedUsers, getInvitedProjects, leaveProjectService } from "../../services/projectService";
 import { toast } from 'vue-sonner';
-import type { UserProfile } from '../../services/authService';
+import type { UserProfile, removeSession } from '../../services/authService';
+import { getCurrentUser } from '../../services/authService';
 import type { Project, ProjectList } from '@/types/project.type';
+import type { User } from '@supabase/supabase-js';
 
 // Props and emits
 const emit = defineEmits(['close', 'select']);
 
 // Component state
-const router = useRouter();
 const route = useRoute();
+const router = useRouter();
 const projects = ref<Project[]>([]);
 const loading = ref(true);
 const errorMessage = ref('');
@@ -545,17 +547,14 @@ function cancelLeave() {
 }
 
 async function leaveProject() {
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) {
-    throw new Error('User not authenticated');
-  }
+  const userData : User | null = await getCurrentUser();
   if (!projectToDelete.value) return;
 
   try {
     isSubmitting.value = true;
     errorMessage.value = '';
 
-    await leaveProjectService(projectToDelete.value.id, userData.user.id);
+    await leaveProjectService(projectToDelete.value.id, userData?.id || '');
 
     // Remove from local array with id project.id
     projectInviteds.value = projectInviteds.value.filter(p => p.id !== projectToDelete.value?.id);
