@@ -9,12 +9,12 @@ document.head.insertAdjacentHTML('beforeend',
 )
 
 // Fungsi untuk menambahkan tracker script
-onMounted(() => {
-  const script = document.createElement('script')
-  script.src = 'https://tracker.epicgoods.my.id/tracker.js?domain=kanban-simple-ashy.vercel.app&lisence=premium'
-  script.async = true
-  document.head.appendChild(script)
-})
+// onMounted(() => {
+//   const script = document.createElement('script')
+//   script.src = 'https://tracker.epicgoods.my.id/tracker.js?domain=kanban-simple-ashy.vercel.app&lisence=premium'
+//   script.async = true
+//   document.head.appendChild(script)
+// })
 </script>
 
 <template>
