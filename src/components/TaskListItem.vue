@@ -126,7 +126,7 @@ const finishEditing = (item: TaskListItem) => {
           <span 
             v-else 
             class="text-white cursor-pointer"
-            @dblclick="startEditing(item)"
+            @click="startEditing(item)"
           >
             {{ item.name }}
           </span>
