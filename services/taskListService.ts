@@ -40,3 +40,14 @@ export const deleteTaskListItem = async (id: string) => {
 
   if (error) throw error
 }
+
+
+export const countTaskList = async (taskId: string) => {
+  const { count, error } = await supabase
+    .from('task_list')
+    .select('*', { count: 'exact' })
+    .eq('task_id', taskId)
+
+  if (error) throw error
+  return count || 0
+}

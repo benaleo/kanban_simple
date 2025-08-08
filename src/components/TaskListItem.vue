@@ -23,6 +23,7 @@ const emit = defineEmits(['update', 'delete'])
 // Task list state
 const loadingTaskLists = ref(false)
 const taskLists = ref<TaskListItem[]>([])
+const editingItemId = ref<string | null>(null)
 
 // Load task lists when task_id changes
 const loadTaskLists = async () => {
@@ -43,19 +44,23 @@ onMounted(loadTaskLists)
 watch(() => props.task_id, loadTaskLists)
 
 const handleUpdate = async (item: TaskListItem) => {
+  // If the item is empty, delete it
   if (!item.name.trim()) {
     await handleDelete(item)
     return
   }
   
-  try {
-    const updatedItem = await updateTaskListItem(item.id, {
-      name: item.name,
-      is_checked: item.is_checked,
-    })
-    emit('update', updatedItem)
-  } catch (error) {
-    console.error('Error updating task item:', error)
+  // Only save if we're not currently editing
+  if (editingItemId.value !== item.id) {
+    try {
+      const updatedItem = await updateTaskListItem(item.id, {
+        name: item.name,
+        is_checked: item.is_checked,
+      })
+      emit('update', updatedItem)
+    } catch (error) {
+      console.error('Error updating task item:', error)
+    }
   }
 }
 
@@ -73,10 +78,20 @@ const addNewTaskListItem = async () => {
   try {
     const newItem = await createTaskListItem(props.task_id, '', false)
     taskLists.value.push(newItem)
+    editingItemId.value = newItem.id // Set the new item as being edited
     emit('update', newItem)
   } catch (error) {
     console.error('Error creating task item:', error)
   }
+}
+
+const startEditing = (item: TaskListItem) => {
+  editingItemId.value = item.id
+}
+
+const finishEditing = (item: TaskListItem) => {
+  editingItemId.value = null
+  handleUpdate(item)
 }
 </script>
 
@@ -100,14 +115,21 @@ const addNewTaskListItem = async () => {
           />
           
           <input
-            v-if="!item.name"
+            v-if="editingItemId === item.id || !item.name"
             v-model="item.name"
-            @blur="() => handleUpdate(item)"
-            @keyup.enter="() => handleUpdate(item)"
+            @blur="() => finishEditing(item)"
+            @keyup.enter="() => finishEditing(item)"
+            @keyup.esc="editingItemId = null"
             class="flex-1 bg-transparent border-b border-white/30 text-white focus:outline-none"
             autofocus
           />
-          <span v-else class="text-white">{{ item.name }}</span>
+          <span 
+            v-else 
+            class="text-white cursor-pointer"
+            @click="startEditing(item)"
+          >
+            {{ item.name }}
+          </span>
         </div>
         
         <button 

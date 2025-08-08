@@ -108,7 +108,7 @@
             </div>
 
             <div
-              class="min-h-[200px] flex flex-col gap-2 drop-zone"
+              class="h-full flex flex-col gap-2 drop-zone"
               @dragover.prevent
               @drop="onDrop($event, column.id)"
             >
@@ -334,6 +334,7 @@
             @change="isTaskList = !isTaskList"
               type="checkbox"
               id="show-task-list"
+              :checked="isTaskList"
               class="h-5 w-5 rounded border-white/30 bg-white/20"
             />
             <label for="show-task-list" class="text-white text-sm">Show Task List</label>
@@ -388,6 +389,7 @@ import type { Column, EditingTask, NewTask, Task } from '@/types/kanban.type'
 import { realtimeTask } from '@/composables/useRealtimeTask'
 import DrawerDialog from '@/components/DrawerDialog.vue'
 import TaskListItem from '@/components/TaskListItem.vue'
+import { countTaskList } from '../../services/taskListService'
 
 // Global state
 const columns = ref<Column[]>([])
@@ -529,6 +531,7 @@ const loadTaskAssignedUsers = async (taskId: string) => {
 const isDrawerOpen = ref(false)
 const showNoProjectDialog = ref(false)
 const showColumnDialog = ref(false)
+const lengthTasks = ref(0)
 
 // Drawer methods
 function openSidebar() {
@@ -549,6 +552,33 @@ const newTask = ref<NewTask>({
   status: '',
   project_id: '',
 })
+
+// count task list
+watch(
+  () => editingTask.value?.id,
+  async (newTaskId) => {
+    if (!newTaskId) {
+      lengthTasks.value = 0;
+      isTaskList.value = false;
+      return;
+    }
+    
+    try {
+      console.log('Fetching task list count for task ID:', newTaskId);
+      const count = await countTaskList(newTaskId);
+      console.log('Task list count:', count);
+      
+      lengthTasks.value = count || 0;
+      isTaskList.value = lengthTasks.value > 0;
+      console.log('Updated isTaskList to:', isTaskList.value);
+    } catch (error) {
+      console.error('Error loading task lists:', error);
+      lengthTasks.value = 0;
+      isTaskList.value = false;
+    }
+  },
+  { immediate: true }
+)
 
 // Get route for project_id from query params
 const route = useRoute()
