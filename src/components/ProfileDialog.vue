@@ -49,8 +49,8 @@
                 <span>Uploading {{ uploadProgress }}%</span>
               </div>
               <div v-else class="avatar-preview-container relative">
-                <div class="avatar-preview">
-                  <img :src="formData.avatar_url" alt="Avatar preview" />
+                <div class="avatar-preview aspect-square">
+                  <img :src="formData.avatar_url" alt="Avatar preview" class="rounded-full" />
                 </div>
                 <div class="avatar-controls">
                   <button type="button" class="remove-avatar-button absolute top-0 right-2" @click="removeAvatar">Remove</button>
