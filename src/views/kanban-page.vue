@@ -376,7 +376,7 @@ import {
 import { supabase } from '../../utils/supabase'
 
 // Set page title
-document.title = 'Beno Kanban'
+document.title = 'Kanban Ala ala'
 
 // UI components
 import { toast } from 'vue-sonner'

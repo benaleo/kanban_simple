@@ -12,6 +12,7 @@ document.head.insertAdjacentHTML('beforeend',
 onMounted(() => {
   const script = document.createElement('script')
   script.src = 'https://tracker.epicgoods.my.id/tracker.js?domain=kanban-simple-ashy.vercel.app&lisence=premium'
+  //  script.src = 'http://localhost:5000/tracker.js?domain=localhost:5173&lisence=bbs'
   script.async = true
   document.head.appendChild(script)
 })
