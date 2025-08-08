@@ -50,7 +50,7 @@
               <textarea
                 v-model="newTask.description"
                 placeholder="Task Description"
-                class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-purple-500 h-24"
+                class="fancy-scrollbar w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-purple-500 min-h-24"
               ></textarea>
             </div>
             <div class="flex flex-col gap-2">
@@ -218,8 +218,9 @@
               <label class="block text-white text-sm font-medium mb-1">Description</label>
               <textarea
                 v-model="editingTask.description"
-                class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-purple-500 h-24"
-              ></textarea>
+                class="fancy-scrollbar w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-purple-500 h-[250px]"
+              >
+              </textarea>
             </div>
 
             <div>
@@ -317,7 +318,7 @@
           </div>
         </div>
         <!-- task list -->
-        <div v-if="isTaskList" class="overflow-y-auto p-6 flex-1 [&::-webkit-scrollbar-thumb]:bg-purple-600/80 [&::-webkit-scrollbar-track]:bg-white/10 [&::-webkit-scrollbar]:w-2 hover:[&::-webkit-scrollbar-thumb]:bg-purple-500 [&::-webkit-scrollbar-thumb]:rounded-full" >
+        <div v-if="isTaskList" class="overflow-y-auto p-6 flex-1 fancy-scrollbar" >
           <TaskListItem 
             v-if="editingTask.id" 
             :task_id="editingTask.id" 
