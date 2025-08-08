@@ -108,7 +108,7 @@
             </div>
 
             <div
-              class="min-h-[200px] flex flex-col gap-2 drop-zone"
+              class="h-full flex flex-col gap-2 drop-zone"
               @dragover.prevent
               @drop="onDrop($event, column.id)"
             >
