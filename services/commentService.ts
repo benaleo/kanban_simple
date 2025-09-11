@@ -80,3 +80,32 @@ export const deleteComment = async (commentId: string): Promise<void> => {
 
   if (error) throw error
 }
+
+// Get count of comments for a single task
+export const getCommentCount = async (taskId: string): Promise<number> => {
+  const { count, error } = await supabase
+    .from(COMMENTS_TABLE)
+    .select('*', { count: 'exact', head: true })
+    .eq('task_id', taskId)
+    .is('deleted_at', null)
+
+  if (error) throw error
+  return count || 0
+}
+
+// Get comment counts for multiple tasks
+export const getCommentsCountForTasks = async (taskIds: string[]): Promise<Record<string, number>> => {
+  if (!taskIds || taskIds.length === 0) return {}
+  const { data, error } = await supabase
+    .from(COMMENTS_TABLE)
+    .select('task_id, id')
+    .in('task_id', taskIds)
+    .is('deleted_at', null)
+
+  if (error) throw error
+  const map: Record<string, number> = {}
+  ;(data || []).forEach((row: any) => {
+    map[row.task_id] = (map[row.task_id] || 0) + 1
+  })
+  return map
+}

@@ -65,9 +65,9 @@
             :key="column.id"
             class="fancy-scrollbar flex-1 flex flex-col gap-4 min-w-[300px] max-h-[95vh] overflow-y-auto space-y-2 bg-white/10 backdrop-blur-md rounded-xl p-4 shadow-xl border border-white/20"
           >
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="text-xl font-semibold text-white">{{ column.name }}</h3>
-              <div class="bg-white/20 text-white text-sm px-2 py-1 rounded-full">
+            <div class="flex items-center justify-between mb-4 sticky top-0 z-10 bg-white backdrop-blur-sm border-b border-white/20 rounded-t-lg py-2 px-2">
+              <h3 class="text-xl font-semibold text-slate-700">{{ column.name }}</h3>
+              <div class="bg-slate-300 aspect-square w-8 text-slate-700 text-sm px-2 py-1 rounded-full flex items-center justify-center">
                 {{ tasksInColumn(column.id).length }}
               </div>
             </div>
@@ -93,12 +93,16 @@
                   <span class="text-xs text-white/70 whitespace-nowrap">{{ formatDate(task.created_at) }}</span>
                 </div>
                 <div class="text-white/90 text-sm mb-2 line-clamp-2 prose prose-slate" v-html="task.description"></div>
-                <div class="flex justify-end mt-2">
+                <div class="flex items-center justify-end gap-2 mt-2">
+                  <span class="text-xs text-white/80 flex items-center gap-1 select-none">
+                    <font-awesome-icon icon="comment-dots" />
+                    {{ getCommentCount(task.id) }}
+                  </span>
                   <button
                     @click.stop="confirmDelete(task.id)"
                     class="text-xs bg-red-500 hover:bg-red-600 text-white py-1 px-2 rounded transition-colors duration-200"
                   >
-                    Delete
+                    <font-awesome-icon icon="trash" />
                   </button>
                 </div>
               </div>
@@ -256,7 +260,7 @@
           </div>
         </div>
         <!-- task list  v-if="isTaskList"  -->
-        <div class="overflow-y-auto p-6 flex flex-col justify-between fancy-scrollbar overflow-x-hidden" >
+        <div class="overflow-y-auto p-6 flex flex-col gap-12 justify-between fancy-scrollbar overflow-x-hidden" >
           <TaskListItem 
             v-if="editingTask.id" 
             :task_id="editingTask.id" 
@@ -267,6 +271,7 @@
               v-if="editingTask.id"
               :taskId="editingTask.id"
               :showComposer="true"
+              @changed="onCommentsChanged"
             />
           </div>
         </div>
@@ -362,12 +367,36 @@ import TaskListItem from '@/components/TaskListItem.vue'
 import CreateTaskForm from '@/components/CreateTaskForm.vue'
 import EditTaskForm from '@/components/EditTaskForm.vue'
 import { countTaskList } from '../../services/taskListService'
+import { getCommentsCountForTasks } from '../../services/commentService'
 
 // Global state
 const columns = ref<Column[]>([])
 const tasks = ref<Task[]>([])
 const loading = ref(false)
 const errorMessage = ref<string>('')
+// Comment counts per task id
+const commentCounts = ref<Record<string, number>>({})
+
+const getCommentCount = (taskId: string) => {
+  return commentCounts.value[taskId] ?? 0
+}
+
+const refreshCommentCounts = async () => {
+  try {
+    const ids = tasks.value.map(t => t.id)
+    commentCounts.value = await getCommentsCountForTasks(ids)
+  } catch (e) {
+    console.error('Failed to load comment counts', e)
+  }
+}
+
+// Update counts when TaskComments emits changes
+const onCommentsChanged = (delta: number) => {
+  const id = editingTask.value.id
+  if (!id) return
+  const current = commentCounts.value[id] ?? 0
+  commentCounts.value = { ...commentCounts.value, [id]: Math.max(0, current + delta) }
+}
 const isTaskList = ref<boolean>(false)
 const isMobile = ref<boolean>(false)
 
@@ -580,6 +609,7 @@ const fetchTasks = async () => {
     // Only fetch tasks if a project is selected
     if (currentProjectId.value) {
       tasks.value = await getTasks(currentProjectId.value)
+      await refreshCommentCounts()
 
       // Setup real-time subscription after initial fetch
       setupRealtimeSubscriptions()
@@ -729,6 +759,10 @@ const executeDelete = async () => {
 
     // Remove task from local state
     tasks.value = tasks.value.filter(t => t.id !== taskToDelete.value)
+    // Remove its comment count too
+    const copy = { ...commentCounts.value }
+    delete copy[taskToDelete.value]
+    commentCounts.value = copy
     
     // Close modal and reset state
     showDeleteConfirm.value = false

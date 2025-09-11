@@ -63,7 +63,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import moment from 'moment-timezone'
-import { getCurrentUser } from '../../services/authService'
+import { getCurrentUser, getUserProfile, type UserProfile } from '../../services/authService'
 import { getCommentsByTask, deleteComment, addComment, type TaskComment } from '../../services/commentService'
 
 const props = defineProps<{
@@ -75,6 +75,10 @@ const comments = ref<TaskComment[]>([])
 const currentUserId = ref<string>('')
 const loading = ref(false)
 const newMessage = ref('')
+const currentUserProfile = ref<UserProfile | null>(null)
+const emit = defineEmits<{
+  (e: 'changed', delta: number): void
+}>()
 
 const loadComments = async () => {
   if (!props.taskId) return
@@ -89,13 +93,24 @@ const loadComments = async () => {
 const onDelete = async (id: string) => {
   await deleteComment(id)
   comments.value = comments.value.filter((c: TaskComment) => c.id !== id)
+  emit('changed', -1)
 }
 
 const submit = async () => {
   if (!props.taskId || !newMessage.value.trim() || !currentUserId.value) return
   const c = await addComment(props.taskId, newMessage.value.trim(), currentUserId.value)
-  comments.value.push({ ...c })
+  comments.value.push({
+    ...c,
+    profile: currentUserProfile.value
+      ? {
+          username: currentUserProfile.value.username,
+          avatar_url: currentUserProfile.value.avatar_url,
+          user_id: currentUserId.value,
+        }
+      : undefined,
+  })
   newMessage.value = ''
+  emit('changed', +1)
 }
 
 const formatTime = (date: string | Date) => {
@@ -115,6 +130,11 @@ const escapeHtml = (str: string) => {
 onMounted(async () => {
   const user = await getCurrentUser()
   currentUserId.value = user?.id || ''
+  if (currentUserId.value) {
+    try {
+      currentUserProfile.value = await getUserProfile(currentUserId.value)
+    } catch {}
+  }
   await loadComments()
 })
 

@@ -14,6 +14,7 @@
       <QuillEditor
         theme="snow"
         contentType="html"
+        toolbar="minimal"
         :content="description"
         @update:content="val => $emit('update:description', String(val || ''))"
         class="bg-white/20 rounded-lg h-[250px] [&_.ql-container]:bg-transparent [&_.ql-toolbar]:bg-white/10 [&_.ql-toolbar]:border-white/30 [&_.ql-container]:border-white/30 text-white"
