@@ -255,12 +255,20 @@
             </div>
           </div>
         </div>
-        <!-- task list -->
-        <div v-if="isTaskList" class="overflow-y-auto p-6 flex-1 fancy-scrollbar" >
+        <!-- task list  v-if="isTaskList"  -->
+        <div class="overflow-y-auto p-6 flex flex-col justify-between fancy-scrollbar overflow-x-hidden" >
           <TaskListItem 
             v-if="editingTask.id" 
             :task_id="editingTask.id" 
           />
+          <!-- Comments under the task list -->
+          <div class="px-6 pb-4 w-full">
+            <TaskComments 
+              v-if="editingTask.id"
+              :taskId="editingTask.id"
+              :showComposer="true"
+            />
+          </div>
         </div>
       </div> 
       <!-- Footer -->
@@ -346,6 +354,7 @@ import { Vue3Lottie } from 'vue3-lottie'
 import LoadingJSON from '../assets/html/loading.json'
 import ProjectDialog from '@/components/ProjectDialog.vue'
 import ColumnDialog from '@/components/ColumnDialog.vue'
+import TaskComments from '@/components/TaskComments.vue'
 import type { Column, EditingTask, NewTask, Task } from '@/types/kanban.type'
 import { realtimeTask } from '@/composables/useRealtimeTask'
 import DrawerDialog from '@/components/DrawerDialog.vue'
