@@ -58,12 +58,12 @@
 
         <!-- Kanban Board -->
         <div
-          class="flex flex-nowrap gap-4 mt-2 scroll-auto overflow-x-auto min-h-[calc(100vh-350px)] pb-4"
+          class="fancy-scrollbar flex flex-nowrap gap-4 mt-2 scroll-auto max-h-[95vh] overflow-y-hidden overflow-x-auto min-h-[calc(100vh-350px)] pb-4"
         >
           <div
             v-for="column in columns"
             :key="column.id"
-            class="flex-1 flex flex-col gap-4 min-w-[300px] space-y-2 bg-white/10 backdrop-blur-md rounded-xl p-4 shadow-xl border border-white/20"
+            class="fancy-scrollbar flex-1 flex flex-col gap-4 min-w-[300px] max-h-[95vh] overflow-y-auto space-y-2 bg-white/10 backdrop-blur-md rounded-xl p-4 shadow-xl border border-white/20"
           >
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-xl font-semibold text-white">{{ column.name }}</h3>
