@@ -64,3 +64,9 @@ const emit = defineEmits<{
   (e: 'update:status', value: string): void
 }>()
 </script>
+
+<style scoped>
+.ql-toolbar.ql-snow {
+  background: white;
+}
+</style>

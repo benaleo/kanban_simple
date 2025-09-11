@@ -95,7 +95,7 @@
                 <div class="text-white/90 text-sm mb-2 line-clamp-2 prose prose-slate" v-html="task.description"></div>
                 <div class="flex justify-end mt-2">
                   <button
-                    @click.stop="removeTask(task.id)"
+                    @click.stop="confirmDelete(task.id)"
                     class="text-xs bg-red-500 hover:bg-red-600 text-white py-1 px-2 rounded transition-colors duration-200"
                   >
                     Delete
@@ -294,6 +294,28 @@
             </button>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div v-if="showDeleteConfirm" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+    <div class="bg-white/20 backdrop-blur-md rounded-xl p-6 max-w-md w-full mx-4 border border-white/30">
+      <h3 class="text-xl font-semibold text-white mb-4">Confirm Delete</h3>
+      <p class="text-white/90 mb-6">Are you sure you want to delete this task? This action cannot be undone.</p>
+      <div class="flex justify-end gap-3">
+        <button
+          @click="showDeleteConfirm = false"
+          class="px-4 py-2 text-sm font-medium text-white bg-gray-500 hover:bg-gray-600 rounded-md transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          @click="executeDelete"
+          class="px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-md transition-colors"
+        >
+          Delete
+        </button>
       </div>
     </div>
   </div>
@@ -678,39 +700,64 @@ const addTask = async () => {
   }
 }
 
-// Delete a task
-const removeTask = async (taskId: string) => {
+// Show delete confirmation dialog
+const confirmDelete = (taskId: string) => {
+  taskToDelete.value = taskId
+  showDeleteConfirm.value = true
+}
+
+// Execute task deletion after confirmation
+const executeDelete = async () => {
+  if (!taskToDelete.value) return
+  
   try {
-    loading.value = true
-    errorMessage.value = ''
+    const { error } = await supabase
+      .from('tasks')
+      .delete()
+      .eq('id', taskToDelete.value)
+    
+    if (error) throw error
 
-    // Delete from Supabase
-    await deleteTask(taskId)
-
-    // Remove from local state
-    tasks.value = tasks.value.filter((t) => t.id !== taskId)
-
-    // Show success toast
+    // Remove task from local state
+    tasks.value = tasks.value.filter(t => t.id !== taskToDelete.value)
+    
+    // Close modal and reset state
+    showDeleteConfirm.value = false
+    taskToDelete.value = null
+    
+    // Show success message
+    if (errorMessage.value) errorMessage.value = ''
     toast.success('Success', {
       description: 'Task deleted successfully',
       duration: 3000,
     })
-  } catch (err) {
-    console.error('Error deleting task:', err)
+  } catch (error) {
+    console.error('Error deleting task:', error)
     errorMessage.value = 'Failed to delete task. Please try again.'
     toast.error('Error', {
       description: 'Failed to delete task',
       duration: 3000,
     })
-  } finally {
-    loading.value = false
+    setTimeout(() => {
+      errorMessage.value = ''
+    }, 5000)
   }
+}
+
+// Delete a task (kept for backward compatibility)
+const removeTask = async (taskId: string) => {
+  taskToDelete.value = taskId
+  await executeDelete()
 }
 
 // Lifecycle hooks
 // Track active subscriptions
 const taskSubscription = ref<any>(null)
 const columnSubscription = ref<any>(null)
+
+// Delete confirmation state
+const showDeleteConfirm = ref(false)
+const taskToDelete = ref<string | null>(null)
 
 // Task change event handler reference
 const taskChangeHandler = (e: Event) => {

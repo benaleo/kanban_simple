@@ -91,3 +91,11 @@
 .fancy-scrollbar {
   @apply [&::-webkit-scrollbar-thumb]:bg-purple-600/80 [&::-webkit-scrollbar-track]:bg-white/10 [&::-webkit-scrollbar]:w-2 hover:[&::-webkit-scrollbar-thumb]:bg-purple-500 [&::-webkit-scrollbar-thumb]:rounded-full;
 }
+
+.ql-toolbar.ql-snow {
+  @apply bg-white;
+}
+
+.ql-editor.ql-blank::before {
+  color: #fff !important;
+}
