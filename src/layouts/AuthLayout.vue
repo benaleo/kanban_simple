@@ -27,7 +27,7 @@
           <div class="dropdown-item" @click="openProfileDialog">
             <i class="fas fa-user"></i> Edit Profile
           </div>
-          <div class="dropdown-item" @click="handleLogout">
+          <div class="dropdown-item" @click="openLogoutDialog">
             <i class="fas fa-sign-out-alt"></i> Logout
           </div>
         </div>
@@ -64,6 +64,7 @@ const showDropdown = ref(false);
 const showProfileDialog = ref(false);
 const showProjectDialog = ref(false);
 const currentProject = ref<any>(null);
+const showLogoutDialog = ref(false);
 
 // Load user data on component mount
 onMounted(async () => {
@@ -115,12 +116,13 @@ const openProfileDialog = () => {
 
 // Handle user logout
 const handleLogout = async () => {
-  try {
-    await logoutUser();
-    router.push('/login');
-  } catch (error) {
-    console.error('Error logging out:', error);
-  }
+  showLogoutDialog.value = true;
+};
+
+// Handle logout confirmation
+const openLogoutDialog = () => {
+  showLogoutDialog.value = true;
+  showDropdown.value = false;
 };
 
 // Handle profile update
@@ -174,7 +176,7 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.75rem 1.5rem;
+  padding: 0 1.5rem;
   background-color: #fff;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }

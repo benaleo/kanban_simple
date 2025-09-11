@@ -20,6 +20,7 @@
     "@fortawesome/vue-fontawesome": "^3.0.8",
     "@supabase/supabase-js": "^2.49.4",
     "@tailwindcss/vite": "^4.1.4",
+    "@vueup/vue-quill": "^1.2.0",
     "moment-timezone": "^0.5.48",
     "uuid": "^11.1.0",
     "vue": "^3.5.13",

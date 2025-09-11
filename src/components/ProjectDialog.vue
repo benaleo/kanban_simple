@@ -54,7 +54,7 @@
                   <div class="flex items-center gap-1">
                     <div class="tooltip" v-for="(user, index) in project.project_invited.slice(0, 3)" :key="user.username">
                       <img v-if="user.avatar_url" :src="user.avatar_url" alt="User Avatar"
-                        class="user-avatar rounded-full w-6">
+                        class="user-avatar rounded-full w-6 aspect-square">
 
                         <font-awesome-icon v-if="!user.avatar_url" icon="circle-user" size="xl" />
                       <div class="tooltiptext">

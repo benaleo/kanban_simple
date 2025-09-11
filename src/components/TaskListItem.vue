@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { 
   getTaskLists,
   createTaskListItem,
@@ -93,20 +93,38 @@ const finishEditing = (item: TaskListItem) => {
   editingItemId.value = null
   handleUpdate(item)
 }
+
+const checkedTask = computed(() => {
+  return taskLists.value.filter(t => t.is_checked).length
+})
+
+const totalTask = computed(() => {
+  return taskLists.value.length
+})
+
+const calculateProgress = computed(() => {
+  return checkedTask.value / totalTask.value * 100
+})
+
 </script>
 
 <template>
   <div>
-    <h2 class="text-white font-semibold mb-4">Task List</h2>
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-white font-semibold">Task List</h2>
+      
+      <!-- counting e.g (5/10) 50% Progress -->
+      <div class="text-white/50 text-sm">({{ checkedTask }} / {{ totalTask }}) | {{ calculateProgress.toFixed(2) }}%</div>
+    </div>
 
     <div v-if="loadingTaskLists" class="text-white/50 text-center">Loading todo items...</div>
     <div v-else>
       <div 
         v-for="item in taskLists" 
         :key="item.id" 
-        class="flex justify-between items-center  gap-2 mb-2 min-w-[200px]"
+        class="flex justify-between items-center w-full gap-2 mb-2 min-w-[200px]"
       >
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 w-full">
           <input 
             type="checkbox" 
             v-model="item.is_checked" 
@@ -120,7 +138,7 @@ const finishEditing = (item: TaskListItem) => {
             @blur="() => finishEditing(item)"
             @keyup.enter="() => finishEditing(item)"
             @keyup.esc="editingItemId = null"
-            class="flex-1 bg-transparent border-b border-white/30 text-white focus:outline-none"
+            class="w-full bg-transparent border-b border-white/30 text-white focus:outline-none"
             autofocus
           />
           <span 

@@ -40,52 +40,17 @@
               </div>
             </div>
           </div>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="grid gap-2 col-span-1 md:col-span-2">
-              <input
-                v-model="newTask.title"
-                placeholder="Task Title"
-                class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-purple-500"
-              />
-              <textarea
-                v-model="newTask.description"
-                placeholder="Task Description"
-                class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-purple-500 h-24"
-              ></textarea>
-            </div>
-            <div class="flex flex-col gap-2">
-              <div class="flex gap-2">
-                <select
-                  v-model="newTask.status"
-                  class="flex-1 p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                >
-                  <option class="bg-black text-white border-red-200 rounded-lg" value="" disabled>
-                    Select a column
-                  </option>
-                  <option
-                    class="bg-black text-white border-red-200 rounded-lg"
-                    v-for="column in columns"
-                    :key="column.id"
-                    :value="column.id"
-                  >
-                    {{ column.name }}
-                  </option>
-                </select>
-                <button
-                  @click="openColumnDialog"
-                  class="max-w-[150px] p-3 bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl"
-                >
-                  <font-awesome-icon icon="table-columns" style="color: white" />
-                </button>
-              </div>
-              <button
-                @click="addTask"
-                class="mt-4 bg-galaxy"
-              >
-                Create Task
-              </button>
-            </div>
-          </div>
+          <CreateTaskForm
+            :title="newTask.title"
+            @update:title="newTask.title = $event"
+            :description="newTask.description"
+            @update:description="newTask.description = $event"
+            :status="newTask.status"
+            @update:status="newTask.status = $event"
+            :columns="columns"
+            @openColumnDialog="openColumnDialog"
+            @create="addTask"
+          />
         </div>
 
         <!-- drawer -->
@@ -93,16 +58,16 @@
 
         <!-- Kanban Board -->
         <div
-          class="flex flex-nowrap gap-4 mt-2 scroll-auto overflow-x-auto min-h-[calc(100vh-350px)] pb-4"
+          class="fancy-scrollbar flex flex-nowrap gap-4 mt-2 scroll-auto max-h-[95vh] overflow-y-hidden overflow-x-auto min-h-[calc(100vh-350px)] pb-4"
         >
           <div
             v-for="column in columns"
             :key="column.id"
-            class="flex-1 flex flex-col gap-4 min-w-[300px] space-y-2 bg-white/10 backdrop-blur-md rounded-xl p-4 shadow-xl border border-white/20"
+            class="fancy-scrollbar flex-1 flex flex-col gap-4 min-w-[300px] max-h-[95vh] overflow-y-auto space-y-2 bg-white/10 backdrop-blur-md rounded-xl p-4 shadow-xl border border-white/20"
           >
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="text-xl font-semibold text-white">{{ column.name }}</h3>
-              <div class="bg-white/20 text-white text-sm px-2 py-1 rounded-full">
+            <div class="flex items-center justify-between mb-4 sticky top-0 z-10 bg-white backdrop-blur-sm border-b border-white/20 rounded-t-lg py-2 px-2">
+              <h3 class="text-xl font-semibold text-slate-700">{{ column.name }}</h3>
+              <div class="bg-slate-300 aspect-square w-8 text-slate-700 text-sm px-2 py-1 rounded-full flex items-center justify-center">
                 {{ tasksInColumn(column.id).length }}
               </div>
             </div>
@@ -127,13 +92,17 @@
                   <h4 class="text-white font-medium text-lg">{{ task.title }}</h4>
                   <span class="text-xs text-white/70 whitespace-nowrap">{{ formatDate(task.created_at) }}</span>
                 </div>
-                <p class="text-white/90 text-sm mb-2 line-clamp-2">{{ task.description }}</p>
-                <div class="flex justify-end mt-2">
+                <div class="text-white/90 text-sm mb-2 line-clamp-2 prose prose-slate" v-html="task.description"></div>
+                <div class="flex items-center justify-end gap-2 mt-2">
+                  <span class="text-xs text-white/80 flex items-center gap-1 select-none">
+                    <font-awesome-icon icon="comment-dots" />
+                    {{ getCommentCount(task.id) }}
+                  </span>
                   <button
-                    @click.stop="removeTask(task.id)"
+                    @click.stop="confirmDelete(task.id)"
                     class="text-xs bg-red-500 hover:bg-red-600 text-white py-1 px-2 rounded transition-colors duration-200"
                   >
-                    Delete
+                    <font-awesome-icon icon="trash" />
                   </button>
                 </div>
               </div>
@@ -206,41 +175,15 @@
         <!-- Scrollable Content -->
         <div class="overflow-y-auto p-6 flex-1 [&::-webkit-scrollbar-thumb]:bg-purple-600/80 [&::-webkit-scrollbar-track]:bg-white/10 [&::-webkit-scrollbar]:w-2 hover:[&::-webkit-scrollbar-thumb]:bg-purple-500 [&::-webkit-scrollbar-thumb]:rounded-full" >
           <div class="flex flex-col gap-2">
-            <div>
-              <label class="block text-white text-sm font-medium mb-1">Title</label>
-              <input
-                v-model="editingTask.title"
-                class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-purple-500"
-              />
-            </div>
-
-            <div>
-              <label class="block text-white text-sm font-medium mb-1">Description</label>
-              <textarea
-                v-model="editingTask.description"
-                class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-purple-500 h-24"
-              ></textarea>
-            </div>
-
-            <div>
-              <label class="block text-white text-sm font-medium mb-1">Status</label>
-              <select
-                v-model="editingTask.status"
-                class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-              >
-                <option class="bg-black text-white border-red-200 rounded-lg" value="" disabled>
-                  Select a column
-                </option>
-                <option
-                  class="bg-black text-white border-red-200 rounded-lg"
-                  v-for="column in columns"
-                  :key="column.id"
-                  :value="column.id"
-                >
-                  {{ column.name }}
-                </option>
-              </select>
-            </div>
+            <EditTaskForm
+              :title="editingTask.title"
+              @update:title="editingTask.title = $event"
+              :description="editingTask.description"
+              @update:description="editingTask.description = $event"
+              :status="editingTask.status"
+              @update:status="editingTask.status = $event"
+              :columns="columns"
+            />
 
             <div class="flex w-full items-center gap-2">
               <div class="flex-1">
@@ -316,12 +259,21 @@
             </div>
           </div>
         </div>
-        <!-- task list -->
-        <div v-if="isTaskList" class="overflow-y-auto p-6 flex-1 [&::-webkit-scrollbar-thumb]:bg-purple-600/80 [&::-webkit-scrollbar-track]:bg-white/10 [&::-webkit-scrollbar]:w-2 hover:[&::-webkit-scrollbar-thumb]:bg-purple-500 [&::-webkit-scrollbar-thumb]:rounded-full" >
+        <!-- task list  v-if="isTaskList"  -->
+        <div class="overflow-y-auto p-6 flex flex-col gap-12 justify-between fancy-scrollbar overflow-x-hidden" >
           <TaskListItem 
             v-if="editingTask.id" 
             :task_id="editingTask.id" 
           />
+          <!-- Comments under the task list -->
+          <div class="px-6 pb-4 w-full">
+            <TaskComments 
+              v-if="editingTask.id"
+              :taskId="editingTask.id"
+              :showComposer="true"
+              @changed="onCommentsChanged"
+            />
+          </div>
         </div>
       </div> 
       <!-- Footer -->
@@ -358,6 +310,28 @@
       </div>
     </div>
   </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div v-if="showDeleteConfirm" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+    <div class="bg-white/20 backdrop-blur-md rounded-xl p-6 max-w-md w-full mx-4 border border-white/30">
+      <h3 class="text-xl font-semibold text-white mb-4">Confirm Delete</h3>
+      <p class="text-white/90 mb-6">Are you sure you want to delete this task? This action cannot be undone.</p>
+      <div class="flex justify-end gap-3">
+        <button
+          @click="showDeleteConfirm = false"
+          class="px-4 py-2 text-sm font-medium text-white bg-gray-500 hover:bg-gray-600 rounded-md transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          @click="executeDelete"
+          class="px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-md transition-colors"
+        >
+          Delete
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -385,17 +359,44 @@ import { Vue3Lottie } from 'vue3-lottie'
 import LoadingJSON from '../assets/html/loading.json'
 import ProjectDialog from '@/components/ProjectDialog.vue'
 import ColumnDialog from '@/components/ColumnDialog.vue'
+import TaskComments from '@/components/TaskComments.vue'
 import type { Column, EditingTask, NewTask, Task } from '@/types/kanban.type'
 import { realtimeTask } from '@/composables/useRealtimeTask'
 import DrawerDialog from '@/components/DrawerDialog.vue'
 import TaskListItem from '@/components/TaskListItem.vue'
+import CreateTaskForm from '@/components/CreateTaskForm.vue'
+import EditTaskForm from '@/components/EditTaskForm.vue'
 import { countTaskList } from '../../services/taskListService'
+import { getCommentsCountForTasks } from '../../services/commentService'
 
 // Global state
 const columns = ref<Column[]>([])
 const tasks = ref<Task[]>([])
 const loading = ref(false)
 const errorMessage = ref<string>('')
+// Comment counts per task id
+const commentCounts = ref<Record<string, number>>({})
+
+const getCommentCount = (taskId: string) => {
+  return commentCounts.value[taskId] ?? 0
+}
+
+const refreshCommentCounts = async () => {
+  try {
+    const ids = tasks.value.map(t => t.id)
+    commentCounts.value = await getCommentsCountForTasks(ids)
+  } catch (e) {
+    console.error('Failed to load comment counts', e)
+  }
+}
+
+// Update counts when TaskComments emits changes
+const onCommentsChanged = (delta: number) => {
+  const id = editingTask.value.id
+  if (!id) return
+  const current = commentCounts.value[id] ?? 0
+  commentCounts.value = { ...commentCounts.value, [id]: Math.max(0, current + delta) }
+}
 const isTaskList = ref<boolean>(false)
 const isMobile = ref<boolean>(false)
 
@@ -608,6 +609,7 @@ const fetchTasks = async () => {
     // Only fetch tasks if a project is selected
     if (currentProjectId.value) {
       tasks.value = await getTasks(currentProjectId.value)
+      await refreshCommentCounts()
 
       // Setup real-time subscription after initial fetch
       setupRealtimeSubscriptions()
@@ -737,39 +739,68 @@ const addTask = async () => {
   }
 }
 
-// Delete a task
-const removeTask = async (taskId: string) => {
+// Show delete confirmation dialog
+const confirmDelete = (taskId: string) => {
+  taskToDelete.value = taskId
+  showDeleteConfirm.value = true
+}
+
+// Execute task deletion after confirmation
+const executeDelete = async () => {
+  if (!taskToDelete.value) return
+  
   try {
-    loading.value = true
-    errorMessage.value = ''
+    const { error } = await supabase
+      .from('tasks')
+      .delete()
+      .eq('id', taskToDelete.value)
+    
+    if (error) throw error
 
-    // Delete from Supabase
-    await deleteTask(taskId)
-
-    // Remove from local state
-    tasks.value = tasks.value.filter((t) => t.id !== taskId)
-
-    // Show success toast
+    // Remove task from local state
+    tasks.value = tasks.value.filter(t => t.id !== taskToDelete.value)
+    // Remove its comment count too
+    const copy = { ...commentCounts.value }
+    delete copy[taskToDelete.value]
+    commentCounts.value = copy
+    
+    // Close modal and reset state
+    showDeleteConfirm.value = false
+    taskToDelete.value = null
+    
+    // Show success message
+    if (errorMessage.value) errorMessage.value = ''
     toast.success('Success', {
       description: 'Task deleted successfully',
       duration: 3000,
     })
-  } catch (err) {
-    console.error('Error deleting task:', err)
+  } catch (error) {
+    console.error('Error deleting task:', error)
     errorMessage.value = 'Failed to delete task. Please try again.'
     toast.error('Error', {
       description: 'Failed to delete task',
       duration: 3000,
     })
-  } finally {
-    loading.value = false
+    setTimeout(() => {
+      errorMessage.value = ''
+    }, 5000)
   }
+}
+
+// Delete a task (kept for backward compatibility)
+const removeTask = async (taskId: string) => {
+  taskToDelete.value = taskId
+  await executeDelete()
 }
 
 // Lifecycle hooks
 // Track active subscriptions
 const taskSubscription = ref<any>(null)
 const columnSubscription = ref<any>(null)
+
+// Delete confirmation state
+const showDeleteConfirm = ref(false)
+const taskToDelete = ref<string | null>(null)
 
 // Task change event handler reference
 const taskChangeHandler = (e: Event) => {
