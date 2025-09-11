@@ -40,52 +40,17 @@
               </div>
             </div>
           </div>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="grid gap-2 col-span-1 md:col-span-2">
-              <input
-                v-model="newTask.title"
-                placeholder="Task Title"
-                class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-purple-500"
-              />
-              <textarea
-                v-model="newTask.description"
-                placeholder="Task Description"
-                class="fancy-scrollbar w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-purple-500 min-h-24"
-              ></textarea>
-            </div>
-            <div class="flex flex-col gap-2">
-              <div class="flex gap-2">
-                <select
-                  v-model="newTask.status"
-                  class="flex-1 p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                >
-                  <option class="bg-black text-white border-red-200 rounded-lg" value="" disabled>
-                    Select a column
-                  </option>
-                  <option
-                    class="bg-black text-white border-red-200 rounded-lg"
-                    v-for="column in columns"
-                    :key="column.id"
-                    :value="column.id"
-                  >
-                    {{ column.name }}
-                  </option>
-                </select>
-                <button
-                  @click="openColumnDialog"
-                  class="max-w-[150px] p-3 bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl"
-                >
-                  <font-awesome-icon icon="table-columns" style="color: white" />
-                </button>
-              </div>
-              <button
-                @click="addTask"
-                class="mt-4 bg-galaxy"
-              >
-                Create Task
-              </button>
-            </div>
-          </div>
+          <CreateTaskForm
+            :title="newTask.title"
+            @update:title="newTask.title = $event"
+            :description="newTask.description"
+            @update:description="newTask.description = $event"
+            :status="newTask.status"
+            @update:status="newTask.status = $event"
+            :columns="columns"
+            @openColumnDialog="openColumnDialog"
+            @create="addTask"
+          />
         </div>
 
         <!-- drawer -->
@@ -206,42 +171,15 @@
         <!-- Scrollable Content -->
         <div class="overflow-y-auto p-6 flex-1 [&::-webkit-scrollbar-thumb]:bg-purple-600/80 [&::-webkit-scrollbar-track]:bg-white/10 [&::-webkit-scrollbar]:w-2 hover:[&::-webkit-scrollbar-thumb]:bg-purple-500 [&::-webkit-scrollbar-thumb]:rounded-full" >
           <div class="flex flex-col gap-2">
-            <div>
-              <label class="block text-white text-sm font-medium mb-1">Title</label>
-              <input
-                v-model="editingTask.title"
-                class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-purple-500"
-              />
-            </div>
-
-            <div>
-              <label class="block text-white text-sm font-medium mb-1">Description</label>
-              <textarea
-                v-model="editingTask.description"
-                class="fancy-scrollbar w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-purple-500 h-[250px]"
-              >
-              </textarea>
-            </div>
-
-            <div>
-              <label class="block text-white text-sm font-medium mb-1">Status</label>
-              <select
-                v-model="editingTask.status"
-                class="w-full p-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-              >
-                <option class="bg-black text-white border-red-200 rounded-lg" value="" disabled>
-                  Select a column
-                </option>
-                <option
-                  class="bg-black text-white border-red-200 rounded-lg"
-                  v-for="column in columns"
-                  :key="column.id"
-                  :value="column.id"
-                >
-                  {{ column.name }}
-                </option>
-              </select>
-            </div>
+            <EditTaskForm
+              :title="editingTask.title"
+              @update:title="editingTask.title = $event"
+              :description="editingTask.description"
+              @update:description="editingTask.description = $event"
+              :status="editingTask.status"
+              @update:status="editingTask.status = $event"
+              :columns="columns"
+            />
 
             <div class="flex w-full items-center gap-2">
               <div class="flex-1">
@@ -390,6 +328,8 @@ import type { Column, EditingTask, NewTask, Task } from '@/types/kanban.type'
 import { realtimeTask } from '@/composables/useRealtimeTask'
 import DrawerDialog from '@/components/DrawerDialog.vue'
 import TaskListItem from '@/components/TaskListItem.vue'
+import CreateTaskForm from '@/components/CreateTaskForm.vue'
+import EditTaskForm from '@/components/EditTaskForm.vue'
 import { countTaskList } from '../../services/taskListService'
 
 // Global state
