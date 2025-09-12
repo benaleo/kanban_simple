@@ -11,7 +11,7 @@
       <QuillEditor
         theme="snow"
         contentType="html"
-        toolbar="minimal"
+        :toolbar="[]"
         placeholder="Task Description"
         :content="description"
         @update:content="val => $emit('update:description', String(val || ''))"
@@ -76,8 +76,8 @@ const emit = defineEmits<{
 </script>
 
 <style scoped>
-.ql-toolbar .ql-snow {
-  background-color: white !important;
+:deep(.ql-toolbar) {
+  display: none !important;
 }
 </style>
 

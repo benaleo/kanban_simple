@@ -66,7 +66,7 @@
             class="fancy-scrollbar flex-1 flex flex-col gap-4 min-w-[300px] max-h-[95vh] overflow-y-auto space-y-2 bg-white/10 backdrop-blur-md rounded-xl p-4 shadow-xl border border-white/20"
           >
             <div class="flex items-center justify-between mb-4 sticky top-0 z-10 bg-white backdrop-blur-sm border-b border-white/20 rounded-t-lg py-2 px-2">
-              <h3 class="text-xl font-semibold text-slate-700">{{ column.name }}</h3>
+              <h3 class="text-medium font-semibold text-slate-700">{{ column.name }}</h3>
               <div class="bg-slate-300 aspect-square w-8 text-slate-700 text-sm px-2 py-1 rounded-full flex items-center justify-center">
                 {{ tasksInColumn(column.id).length }}
               </div>
@@ -86,11 +86,11 @@
                 @dragstart="onDragStart($event, task, column.id)"
                 @dragenter.prevent
                 @click="openEditModal(task)"
-                class="task-card bg-white/20 backdrop-blur-sm p-4 mb-4 rounded-lg border border-white/30 cursor-move hover:shadow-lg transition-all duration-200 hover:bg-white/30"
+                class="task-card bg-white/20 px-2 pb-2 backdrop-blur-sm mb-4 rounded-lg border border-white/30 cursor-move hover:shadow-lg transition-all duration-200 hover:bg-white/30"
               >
-                <div class="flex justify-between items-start mb-2">
-                  <h4 class="text-white font-medium text-lg">{{ task.title }}</h4>
-                  <span class="text-xs text-white/70 whitespace-nowrap">{{ formatDate(task.created_at) }}</span>
+                <div class="flex justify-between items-start mb-2 relative pt-4">
+                  <h4 class="text-white font-bold text-medium border-b-1 line-clamp-1">{{ task.title }}</h4>
+                  <span class="absolute top-1 right-0 text-xs text-white/70 whitespace-nowrap">{{ task.created_at.getDate() + '-' + task.created_at.getMonth() + '-' + task.created_at.getFullYear() + ' ' + task.created_at.getHours() + ':' + task.created_at.getMinutes() + ':' + task.created_at.getSeconds() }}</span>
                 </div>
                 <div class="text-white/90 text-sm mb-2 line-clamp-2 prose prose-slate" v-html="task.description"></div>
                 <div class="flex items-center justify-end gap-2 mt-2">
