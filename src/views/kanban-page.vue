@@ -90,7 +90,7 @@
               >
                 <div class="flex justify-between items-start mb-2 relative pt-4">
                   <h4 class="text-white font-bold text-medium border-b-1 line-clamp-1">{{ task.title }}</h4>
-                  <span class="absolute top-1 right-0 text-xs text-white/70 whitespace-nowrap">{{ task.created_at.getDate() + '-' + task.created_at.getMonth() + '-' + task.created_at.getFullYear() + ' ' + task.created_at.getHours() + ':' + task.created_at.getMinutes() + ':' + task.created_at.getSeconds() }}</span>
+                  <span class="absolute top-1 right-0 text-xs text-white/70 whitespace-nowrap">{{ formatDateTime(task.created_at) }}</span>
                 </div>
                 <div class="text-white/90 text-sm mb-2 line-clamp-2 prose prose-slate" v-html="task.description"></div>
                 <div class="flex items-center justify-end gap-2 mt-2">
@@ -379,6 +379,12 @@ const commentCounts = ref<Record<string, number>>({})
 
 const getCommentCount = (taskId: string) => {
   return commentCounts.value[taskId] ?? 0
+}
+
+const formatDateTime = (value: any): string => {
+  const m = moment(value)
+  if (!m.isValid()) return ''
+  return m.format('D-M-YYYY HH:mm:ss')
 }
 
 const refreshCommentCounts = async () => {
